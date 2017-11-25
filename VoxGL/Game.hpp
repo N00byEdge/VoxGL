@@ -37,7 +37,6 @@ private:
 	Config conf;
 
 	// Use values from conf only after it has been loaded
-	;
 
 	std::vector <std::unique_ptr<GameState>> states;
 	std::chrono::duration<float, std::milli> minFrameTime, lastFrameTime{0.1f};
