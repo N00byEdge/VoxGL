@@ -77,3 +77,13 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+.vs*
+Debug*
+x64*
+VoxGL/x64*
+VoxGL/Release*
+VoxGL/stb_image.h
+VoxGL/GIMP/*
+VoxGL/wd/*
+VoxGL/VoxGL.vcxproj.user
