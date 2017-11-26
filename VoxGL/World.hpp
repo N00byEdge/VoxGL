@@ -55,11 +55,12 @@ struct World {
 	~World();
 
 	void draw(float deltaT, const glm::mat4 &perspective, Shader &);
-	void tryRegen(BlockCoord x, BlockCoord y, BlockCoord z);
-	void chunkUpdated(BlockCoord x, BlockCoord y, BlockCoord z);
-	Block *blockAt(BlockCoord x, BlockCoord y, BlockCoord z);
-	Chunk *getChunkAtBlock(BlockCoord x, BlockCoord y, BlockCoord z);
-	Chunk *getChunk(BlockCoord x, BlockCoord y, BlockCoord z);
+	template <bool alreadyHasMutex> void tryRegen(BlockCoord x, BlockCoord y, BlockCoord z);
+	template <bool alreadyHasMutex> void chunkUpdated(BlockCoord x, BlockCoord y, BlockCoord z);
+	template <bool alreadyHasMutex> Block *blockAt(BlockCoord x, BlockCoord y, BlockCoord z);
+	template <bool alreadyHasMutex> Chunk *getChunkAtBlock(BlockCoord x, BlockCoord y, BlockCoord z);
+	template <bool alreadyHasMutex> Chunk *getChunk(BlockCoord x, BlockCoord y, BlockCoord z);
+	std::tuple<Block *, BlockSide, BlockCoord, BlockCoord, BlockCoord, float> raycast(glm::vec3 from, glm::vec3 dir, float maxDist);
 	static constexpr std::tuple <BlockCoord, BlockCoord, BlockCoord> getChunkPos(ChunkIndex ci);
 	static constexpr ChunkIndex getChunkIndexChunk(BlockCoord x, BlockCoord y, BlockCoord z);
 	static constexpr ChunkIndex getChunkIndexBlock(BlockCoord x, BlockCoord y, BlockCoord z);
@@ -83,3 +84,63 @@ private:
 };
 
 float getWorldgenVal(BlockCoord x, BlockCoord y, World &world, PerlinInstance instance);
+
+constexpr ChunkIndex World::getChunkIndexChunk(BlockCoord x, BlockCoord y, BlockCoord z) {
+	return ((ChunkIndex)((unsigned)x & chunkIndexMask) << (chunkIndexBits * 2)) | ((ChunkIndex)((unsigned)y & chunkIndexMask) << chunkIndexBits) | (ChunkIndex)((unsigned)z & chunkIndexMask);
+}
+
+template <bool alreadyHasMutex>
+void World::tryRegen(BlockCoord x, BlockCoord y, BlockCoord z) {
+	auto chunk = getChunk<alreadyHasMutex>(x, y, z);
+	if (chunk)
+		chunk->regenerateChunkMesh<alreadyHasMutex>(x, y, z, this);
+}
+
+template <bool alreadyHasMutex>
+void World::chunkUpdated(BlockCoord x, BlockCoord y, BlockCoord z) {
+	// Update chunk above and below
+	for (auto cz = z + 2; cz--;)
+		tryRegen<alreadyHasMutex>(x, y, cz);
+
+	// Update adjacent chunks
+	for (std::pair <BlockCoord, BlockCoord> dxdy : std::vector <std::pair<BlockCoord, BlockCoord>>{ { 0, 1 },{ 0, -1 },{ 1, 0 },{ -1, 0 } })
+		tryRegen<alreadyHasMutex>(x + dxdy.first, y + dxdy.second, z);
+}
+
+template <bool alreadyHasMutex>
+Block *World::blockAt(BlockCoord x, BlockCoord y, BlockCoord z) {
+	if (z < 0) return nullptr;
+
+	auto xx = Chunk::decomposeBlockPos(x);
+	auto yy = Chunk::decomposeBlockPos(y);
+	auto zz = Chunk::decomposeBlockPos(z);
+
+	auto c = getChunk<alreadyHasMutex>(xx.second, yy.second, zz.second);
+	if (c)
+		return c->blockAt(xx.first, yy.first, zz.first);
+	else
+		return nullptr;
+}
+
+template <bool alreadyHasMutex>
+Chunk *World::getChunkAtBlock(BlockCoord x, BlockCoord y, BlockCoord z) {
+	if (z < 0) return nullptr;
+	return getChunk<alreadyHasMutex>(Chunk::decomposeChunkFromBlock(x), Chunk::decomposeChunkFromBlock(y), Chunk::decomposeChunkFromBlock(z));
+}
+
+template <bool alreadyHasMutex>
+Chunk *World::getChunk(BlockCoord x, BlockCoord y, BlockCoord z) {
+	if (z < 0) return nullptr;
+	auto ci = getChunkIndexChunk(x, y, z);
+	if constexpr(alreadyHasMutex) {
+		auto chunk = chunks.find(ci);
+		if (chunk == chunks.end()) return nullptr;
+		else return chunk->second.get();
+	}
+	else constexpr {
+		std::lock_guard<std::mutex> lck(chunkMutex);
+		auto chunk = chunks.find(ci);
+		if (chunk == chunks.end()) return nullptr;
+		else return chunk->second.get();
+	}
+}

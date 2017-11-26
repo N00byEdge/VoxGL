@@ -19,93 +19,129 @@ World::World(glm::vec3 *const position) : position(position), worldgenThread(&Wo
 
 World::~World() {
 	generating = false;
-	if(worldgenThread.joinable())
-		worldgenThread.join();
+	worldgenThread.join();
 }
 
 void World::draw(float deltaT, const glm::mat4 &perspective, Shader &shader) {
 	blockTextures->bind();
 	std::lock_guard<std::mutex> lck(chunkMutex);
 	for (auto &c : chunks) {
-		auto cp = getChunkPos(c.first);
-		c.second->draw(deltaT, { std::get<0>(cp), std::get<1>(cp), std::get<2>(cp) });
+		auto [x, y, z] = getChunkPos(c.first);
+		c.second->draw(deltaT, { x, y, z });
 	}
 }
 
-void World::tryRegen(BlockCoord x, BlockCoord y, BlockCoord z) {
-	auto chunk = getChunk(x, y, z);
-	if (chunk)
-		chunk->regenerateChunkMesh(x, y, z, this);
+float intDist(float from, float dir) {
+	from = posfmod(from, 1.f);
+	if (dir > .0f) return (1.f - from) / dir;
+	else return from / dir;
 }
 
-void World::chunkUpdated(BlockCoord x, BlockCoord y, BlockCoord z) {
-	// Update chunk above and below
-	for (auto cz = z + 2; cz--;)
-		tryRegen(x, y, cz);
-
-	// Update adjacent chunks
-	for (std::pair <BlockCoord, BlockCoord> dxdy : std::vector <std::pair<BlockCoord, BlockCoord>>{ {0, 1}, {0, -1}, {1, 0}, {-1, 0} })
-		tryRegen(x + dxdy.first, y + dxdy.second, z);
-
-	//tryRegen(x, y, z);
-}
-
-Block *World::blockAt(BlockCoord x, BlockCoord y, BlockCoord z) {
-	if (z < 0) return nullptr;
-
-	auto xx = Chunk::decomposeBlockPos(x);
-	auto yy = Chunk::decomposeBlockPos(y);
-	auto zz = Chunk::decomposeBlockPos(z);
-
-	auto c = getChunk(xx.second, yy.second, zz.second);
-	if (c)
-		return c->blockAtSafe(xx.first, yy.first, zz.first);
-	else
-		return nullptr;
-}
-
-Chunk *World::getChunkAtBlock(BlockCoord x, BlockCoord y, BlockCoord z) {
-	if (z < 0) return nullptr;
-	return getChunk(Chunk::decomposeChunkFromBlock(x), Chunk::decomposeChunkFromBlock(y), Chunk::decomposeChunkFromBlock(z));
-}
-
-Chunk *World::getChunk(BlockCoord x, BlockCoord y, BlockCoord z) {
-	if (z < 0) return nullptr;
-	auto ci = getChunkIndexChunk(x, y, z);
+std::tuple<Block *, BlockSide, BlockCoord, BlockCoord, BlockCoord, float> World::raycast(glm::vec3 from, glm::vec3 dir, float maxDist) {
+	auto start = from;
 	std::lock_guard<std::mutex> lck(chunkMutex);
-	auto chunk = chunks.find(ci);
-	if (chunk == chunks.end()) return nullptr;
-	else return chunk->second.get();
+	while (true) {
+		float remaining = maxDist + 5.0f;
+
+		enum struct Changed {
+			none, x, y, z
+		};
+
+		Changed changed = Changed::none;
+
+		if (dir.x) {
+			auto dist = intDist(from.x, dir.x);
+			if (dist < remaining)
+				remaining = dist;
+			changed = Changed::x;
+		}
+
+		if (dir.y) {
+			auto dist = intDist(from.y, dir.y);
+			if (dist < remaining)
+				remaining = dist;
+			changed = Changed::y;
+		}
+
+		if (dir.z) {
+			auto dist = intDist(from.z, dir.z);
+			if (dist < remaining)
+				remaining = dist;
+			changed = Changed::z;
+		}
+
+		auto xd = from.x - start.x, yd = from.y - start.y, zd = start.x - start.y;
+		auto travelled = xd * xd + yd * yd + zd * zd;
+		if (changed == Changed::none || travelled + remaining > maxDist)
+			return { nullptr, BlockSide::Top, 0, 0, 0, .0f };
+
+		from += remaining * dir;
+
+		Block *b = nullptr;
+		int x = 0, y = 0, z = 0;
+		BlockSide hit;
+
+		switch (changed) {
+		case Changed::x:
+			if (dir.x > 0.f) x = round(from.x),     y = floor(from.y),     z = floor(from.z),     hit = BlockSide::Front;
+			else             x = round(from.x) - 1, y = floor(from.y),     z = floor(from.z),     hit = BlockSide::Back;
+			break;
+		case Changed::y:
+			if (dir.y > 0.f) x = floor(from.x),     y = round(from.y),     z = floor(from.z),     hit = BlockSide::Left;
+			else             x = floor(from.x),     y = round(from.y) - 1, z = floor(from.z),     hit = BlockSide::Right;
+			break;
+		case Changed::z:
+			if (dir.z > 0.f) x = floor(from.x),     y = floor(from.y),     z = round(from.z),     hit = BlockSide::Bottom;
+			else             x = floor(from.x),     y = floor(from.y),     z = round(from.z) - 1, hit = BlockSide::Top;
+			break;
+		}
+
+		b = blockAt<true>(x, y, z);
+
+		// #TODO: not make this assume that the block is a unit cube, this will not work for non-full blocks.
+		if (b)
+			return { b, hit, x, y, z, travelled };
+	}
 }
 
 constexpr std::tuple<BlockCoord, BlockCoord, BlockCoord> World::getChunkPos(ChunkIndex ci) {
-	return std::make_tuple((BlockCoord)(ci >> chunkIndexBits * 2) & chunkIndexMask, (BlockCoord)(ci >> chunkIndexBits) & chunkIndexMask, (BlockCoord)ci & chunkIndexMask);
+	auto cc = (unsigned long long)ci;
+
+	auto xx = (BlockCoord)(cc >> chunkIndexBits * 2) & chunkIndexMask;
+	auto yy = (BlockCoord)(cc >> chunkIndexBits) & chunkIndexMask;
+	auto zz = (BlockCoord)cc & chunkIndexMask;
+
+	if (xx & (1 << (chunkIndexBits - 1)))
+		xx |= ~chunkIndexMask;
+
+	if (yy & (1 << (chunkIndexBits - 1)))
+		yy |= ~chunkIndexMask;
+
+	if (zz & (1 << (chunkIndexBits - 1)))
+		zz |= ~chunkIndexMask;
+
+	return std::make_tuple(xx, yy, zz);
 }
 
-constexpr ChunkIndex World::getChunkIndexChunk(BlockCoord x, BlockCoord y, BlockCoord z) {
-	return ((ChunkIndex)(x & chunkIndexMask) << (chunkIndexBits * 2)) | ((ChunkIndex)(y & chunkIndexMask) << chunkIndexBits) | (ChunkIndex)(z & chunkIndexMask);
-}
+constexpr auto temp = World::getChunkIndexChunk(-1, 0, 0);
+constexpr auto test = World::getChunkPos(temp);
 
 constexpr ChunkIndex World::getChunkIndexBlock(BlockCoord x, BlockCoord y, BlockCoord z) {
 	return getChunkIndexChunk(Chunk::decomposeChunkFromBlock(x), Chunk::decomposeChunkFromBlock(y), Chunk::decomposeChunkFromBlock(z));
 }
 
 void World::worldgen() {
-	//std::vector<std::tuple<BlockCoord, BlockCoord, BlockCoord>> generatedChunks;
-
 	const static auto makeChunk = [&](BlockCoord cx, BlockCoord cy, BlockCoord cz, ChunkIndex ci) {
 		auto c = std::make_unique<Chunk>(cx, cy, cz, this);
 		{
 			std::lock_guard<std::mutex> lck(chunkMutex);
 			chunks[ci] = std::move(c);
 		}
-		chunkUpdated(cx, cy, cz);
-
-		return 1;
+		chunkUpdated<false>(cx, cy, cz);
 	};
 
 	while (generating) {
-		std::vector <std::future<int>> futs;
+		std::vector <std::future<void>> futs;
 
 		for (BlockCoord x = (BlockCoord)(position->x / chunkSize - worldgenDist - 1); x <= (BlockCoord)(position->x / chunkSize + worldgenDist) && generating; ++x) {
 			for (BlockCoord y = (BlockCoord)(position->y / chunkSize - worldgenDist - 1); y <= (BlockCoord)(position->y / chunkSize + worldgenDist) && generating; ++y) {
@@ -194,4 +230,9 @@ float getWorldgenVal(BlockCoord x, BlockCoord y, World &world, PerlinInstance in
 	(*cache)[comp] = val;
 
 	return val;
+}
+
+namespace {
+	// Make sure encoding is working properly
+	static_assert(std::get<1>(World::getChunkPos(World::getChunkIndexChunk(-4, -1, -4))) == -1);
 }
