@@ -12,3 +12,8 @@ template <typename T1, typename T2>
 constexpr T1 posmod(T1 lhs, T2 rhs) {
 	return ((lhs % rhs) + rhs) % rhs;
 }
+
+template <typename T1, typename T2>
+constexpr T1 posfmod(T1 lhs, T2 rhs) {
+	return fmod((fmod(lhs, rhs)) + rhs, rhs);
+}

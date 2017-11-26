@@ -109,7 +109,7 @@ void IngameState::handleEvent(Game *g, sf::Window &window, sf::Event &event) {
 
 			lookX -= (float)delta.x / 1000.0f;
 
-			lookX = fmod(lookX, 3.1415f * 2.0f);
+			lookX = posfmod(lookX, 3.1415f * 2.0f);
 
 			lookZ -= (float)delta.y / 1000.0f;
 
