@@ -79,6 +79,9 @@
     <ClInclude Include="Maths.hpp">
       <Filter>Util</Filter>
     </ClInclude>
+    <ClInclude Include="Shaders.hpp">
+      <Filter>Graphics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MenuState.cpp">
@@ -129,12 +132,15 @@
     <ClCompile Include="TextureAtlas.cpp">
       <Filter>OpenGL</Filter>
     </ClCompile>
+    <ClCompile Include="Shaders.cpp">
+      <Filter>Graphics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="wd\assets\res\basicShader.vs">
+    <None Include="shaders\basicShader.fs">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="wd\assets\res\basicShader.fs">
+    <None Include="shaders\basicShader.vs">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

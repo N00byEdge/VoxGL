@@ -57,7 +57,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>G:\API\SFML\2.4.2\include;G:\API\GLM\0.9.9-a2;G:\API\Glew\2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)shaders;G:\API\SFML\2.4.2\include;G:\API\GLM\0.9.9-a2;G:\API\Glew\2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnableModules>true</EnableModules>
       <OpenMPSupport>true</OpenMPSupport>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -95,7 +95,7 @@
       <PreprocessorDefinitions>WIN32;SFML_STATIC;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>G:\API\SFML\2.4.2\include;G:\API\GLM\0.9.9-a2;G:\API\Glew\2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)shaders;G:\API\SFML\2.4.2\include;G:\API\GLM\0.9.9-a2;G:\API\Glew\2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnableModules>true</EnableModules>
       <OpenMPSupport>true</OpenMPSupport>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -147,7 +147,9 @@
     <ClInclude Include="Mesh.hpp" />
     <ClInclude Include="PerlinNoise.hpp" />
     <ClInclude Include="Shader.hpp" />
+    <ClCompile Include="Shaders.cpp" />
     <ClCompile Include="stb_image.h" />
+    <ClInclude Include="Shaders.hpp" />
     <ClInclude Include="TextureAtlas.hpp" />
     <ClInclude Include="Textures.hpp" />
     <ClInclude Include="Transform.hpp" />
@@ -171,8 +173,8 @@
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="wd\assets\res\basicShader.fs" />
-    <None Include="wd\assets\res\basicShader.vs" />
+    <None Include="shaders\basicShader.fs" />
+    <None Include="shaders\basicShader.vs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

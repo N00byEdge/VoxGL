@@ -7,6 +7,8 @@
 #include "GL/glew.h"
 #include "Textures.hpp"
 
+#include "Shaders.hpp"
+
 Game *Game::gameState = nullptr;
 
 #define LOADT(text) text.loadFromFile(texturePath() + #text + ".png");
@@ -58,7 +60,7 @@ postWindowInit([&]() {
 	return nullptr;
 }()),
 
-basicShader(shaderPath() + "basicShader") {
+basicShader(basicVS, basicFS) {
 
 	basicShader.bind();
 

@@ -21,33 +21,28 @@ void checkShaderError(GLuint shader, GLuint flag, const std::string errorPrefix 
 		(isProgram ? glGetProgramInfoLog : glGetShaderInfoLog)(shader, sizeof(error), NULL, error), std::cerr << errorPrefix << error << std::endl;
 }
 
-GLuint makeShader(const std::string &path, GLenum shaderType) {
-	std::ifstream filestream(path);
-	std::string file, line;
+GLuint makeShader(const std::string &shaderSource, GLenum shaderType) {
 	GLuint shader = glCreateShader(shaderType);
 
-	while (getline(filestream, line)) {
-		file += line + "\n";
-	}
+	auto fptr = std::make_unique<const char *>(shaderSource.c_str());
+	auto filesize = std::make_unique<GLint>((GLint)shaderSource.size());
 
-	const char *fstr = file.c_str();
-	auto filesize = std::make_unique<GLint>((GLint)file.size());
-	glShaderSource(shader, 1, &fstr, filesize.get());
+	glShaderSource(shader, 1, fptr.get(), filesize.get());
 	glCompileShader(shader);
 
-	checkShaderError<false>(shader, GL_COMPILE_STATUS, "Shader linking error in " + path + ": ");
+	checkShaderError<false>(shader, GL_COMPILE_STATUS, "Shader linking error: ");
 
 	assert(glGetError() == GL_NO_ERROR);
 
 	return shader;
 }
 
-Shader::Shader(std::string path) : program(glCreateProgram()),
+Shader::Shader(const std::string &vertexShader, const std::string &fragmentShader) : program(glCreateProgram()),
 
 shaders([&]() {
 	std::vector <GLuint> shaders;
-	shaders.push_back(makeShader(path + ".vs", GL_VERTEX_SHADER));
-	shaders.push_back(makeShader(path + ".fs", GL_FRAGMENT_SHADER));
+	shaders.push_back(makeShader(vertexShader, GL_VERTEX_SHADER));
+	shaders.push_back(makeShader(fragmentShader, GL_FRAGMENT_SHADER));
 
 	for (const auto &s : shaders)
 		glAttachShader(program, s);
@@ -56,10 +51,10 @@ shaders([&]() {
 	glBindAttribLocation(program, 1, "textCoord");
 
 	glLinkProgram(program);
-	checkShaderError<true>(program, GL_LINK_STATUS, "Shader linking error in " + path + ": ");
+	checkShaderError<true>(program, GL_LINK_STATUS, "Shader linking error: ");
 
 	glValidateProgram(program);
-	checkShaderError<true>(program, GL_VALIDATE_STATUS, "Shader validation error in " + path + ": ");
+	checkShaderError<true>(program, GL_VALIDATE_STATUS, "Shader validation error: ");
 
 	return shaders;
 }()),

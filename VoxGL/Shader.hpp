@@ -11,7 +11,7 @@
 struct Camera;
 
 struct Shader {
-	Shader(std::string path);
+	Shader(const std::string &vertexShader, const std::string &fragmentShader);
 	~Shader();
 	void bind();
 	void update(const glm::mat4 &transform, const glm::mat4 &camera);
