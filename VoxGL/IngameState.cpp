@@ -19,7 +19,7 @@
 #include <cmath>
 
 IngameState::IngameState(Game *g, sf::Window &window): GameState(g), w(&position) {
-	sf::Mouse::setPosition({(int)window.getSize().x / 2, (int)window.getSize().y / 2}, window);
+	if(!releaseCursor) sf::Mouse::setPosition({(int)window.getSize().x / 2, (int)window.getSize().y / 2}, window);
 }
 
 FrameRet IngameState::frame(Game *g, sf::Window &window, float timeDelta) {
@@ -85,7 +85,7 @@ void IngameState::handleEvent(Game *g, sf::Window &window, sf::Event &event) {
 		break;
 	case sf::Event::Resized:
 		glViewport(0, 0, event.size.width, event.size.height);
-		sf::Mouse::setPosition({ (int)window.getSize().x / 2, (int)window.getSize().y / 2 }, window);
+		if(!releaseCursor) sf::Mouse::setPosition({ (int)window.getSize().x / 2, (int)window.getSize().y / 2 }, window);
 		break;
 	case sf::Event::KeyPressed:
 		switch (event.key.code) {
@@ -95,9 +95,7 @@ void IngameState::handleEvent(Game *g, sf::Window &window, sf::Event &event) {
 		case sf::Keyboard::Key::LAlt:
 			if (window.hasFocus()) {
 				releaseCursor = !releaseCursor;
-				if (!releaseCursor) {
-					sf::Mouse::setPosition({ (int)window.getSize().x / 2, (int)window.getSize().y / 2 }, window);
-				}
+				if (!releaseCursor) sf::Mouse::setPosition({ (int)window.getSize().x / 2, (int)window.getSize().y / 2 }, window);
 			}
 			break;
 		case sf::Keyboard::Key::F3:

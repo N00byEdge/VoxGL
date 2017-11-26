@@ -15,7 +15,7 @@ struct IngameState : public GameState {
 	glm::vec3 position{ 0, 0, 82 };
 	glm::vec3 momentum{ 0, 0, 0 };
 	float lookX = .0f, lookZ = .0f;
-	bool releaseCursor = false;
+	bool releaseCursor = isDebugging;
 	bool isVerbose = false;
 
 	// _Please_ initialize the world last.
