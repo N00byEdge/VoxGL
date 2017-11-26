@@ -5,7 +5,7 @@
 
 #include <future>
 
-constexpr int worldgenDist = isDebugging ? 1 : 10;
+constexpr float worldgenDist = isDebugging ? 3.0f : 10.0f;
 
 namespace {
 	constexpr bool modulusWorksAsExpected = ((-(chunkSize - 1) % chunkSize) + chunkSize) % chunkSize == (-(chunkSize - 1) + chunkSize) % chunkSize;
@@ -99,39 +99,99 @@ void World::worldgen() {
 			std::lock_guard<std::mutex> lck(chunkMutex);
 			chunks[ci] = std::move(c);
 		}
-		//generatedChunks.push_back({ cx, cy, cz });
 		chunkUpdated(cx, cy, cz);
+
+		return 1;
 	};
 
 	while (generating) {
-		std::vector <std::future<void>> futs;
+		std::vector <std::future<int>> futs;
 
-		for (BlockCoord x = (BlockCoord)(position->x / chunkSize) - worldgenDist - 1; x <= (BlockCoord)(position->x / chunkSize + worldgenDist) && generating; ++x) {
-			for (BlockCoord y = (BlockCoord)(position->y / chunkSize) - worldgenDist - 1; y <= (BlockCoord)(position->y / chunkSize + worldgenDist) && generating; ++y) {
-				for (BlockCoord z = (BlockCoord)0; z < (BlockCoord)6; ++z) {
+		for (BlockCoord x = (BlockCoord)(position->x / chunkSize - worldgenDist - 1); x <= (BlockCoord)(position->x / chunkSize + worldgenDist) && generating; ++x) {
+			for (BlockCoord y = (BlockCoord)(position->y / chunkSize - worldgenDist - 1); y <= (BlockCoord)(position->y / chunkSize + worldgenDist) && generating; ++y) {
+				auto xd = .5f + x - position->x, yd = .5f + y - position->y;
+				if (xd * xd + yd * yd > worldgenDist * worldgenDist) continue;
+				auto height = Chunk::blockHeight(Chunk::getBlerpWorldgenVal(x * chunkSize, y * chunkSize, this, PerlinInstance::Height));
+				for (BlockCoord z = (BlockCoord)0; z <= ceil((float)height/chunkSize); ++z) {
 					auto ci = getChunkIndexChunk(x, y, z);
 					bool create;
 					{
 						std::lock_guard<std::mutex> lck(chunkMutex);
 						create = (chunks.find(ci) == chunks.end());
 					}
-					if (create) futs.push_back(std::async(std::launch::async, makeChunk, x, y, z, ci));
-					//if (create) makeChunk(x, y, z, ci);
+					
+					if constexpr(isDebugging) {
+						if (create) makeChunk(x, y, z, ci);
+					}
+					else {
+						if (create) futs.push_back(std::async(makeChunk, x, y, z, ci));
+					}
 				}
 			}
 		}
 
-		//for (auto c = 0ull; c < generatedChunks.size() && generating; ++c) {
-			//auto &cc{ generatedChunks[c] };
-
-			//futs.push_back(std::async(std::launch::async, &World::chunkUpdated, this, std::get<0>(cc), std::get<1>(cc), std::get<2>(cc)));
-		//}
-
-		for (auto &f : futs)
-			f.get();
-
-		//generatedChunks.clear();
+		if constexpr(!isDebugging) {
+			for (auto &f : futs)
+				f.get();
+			futs.clear();
+		}
 
 		std::this_thread::sleep_for(std::chrono::duration<float, std::milli>(300));
 	}
+}
+
+float getWorldgenVal(BlockCoord x, BlockCoord y, World &world, PerlinInstance instance) {
+	int num;
+	auto *cache = [&]() {
+		if (instance == PerlinInstance::Height) {
+			num = heightPrecision.num;
+			return &world.heightmap;
+		}
+
+		else if (instance == PerlinInstance::Temperature) {
+			num = temperaturePrecision.num;
+			return &world.temperaturemap;
+		}
+
+		else if (instance == PerlinInstance::Humidity) {
+			num = humidityPrecision.num;
+			return &world.humiditymap;
+		}
+
+		assert(false);
+		return &world.heightmap;
+	}();
+
+	x -= posmod(x, num);
+	y -= posmod(y, num);
+
+	auto comp = (((long long)x << 32)) | ((long long)y & 0x00000000ffffffff);
+
+	// If cached, return it
+	{
+		std::lock_guard<std::mutex> lck(world.worldgenMapMutex);
+		auto it = cache->find(comp);
+		if (it != cache->end()) {
+			return it->second;
+		}
+	}
+
+	// If not cached, compute and store it
+	float val = 0;
+	switch (instance) {
+	case PerlinInstance::Height:
+		val = perlinNoise<heightPrecision.noiseArg>(x, y, world.seed, (int)instance);
+		break;
+	case PerlinInstance::Humidity:
+		val = perlinNoise<humidityPrecision.noiseArg>(x, y, world.seed, (int)instance);
+		break;
+	case PerlinInstance::Temperature:
+		val = perlinNoise<temperaturePrecision.noiseArg>(x, y, world.seed, (int)instance);
+		break;
+	}
+
+	std::lock_guard<std::mutex> lck(world.worldgenMapMutex);
+	(*cache)[comp] = val;
+
+	return val;
 }

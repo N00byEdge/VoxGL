@@ -12,6 +12,7 @@ constexpr BlockCoord chunkBlockMask = chunkSize - 1;
 constexpr BlockCoord chunkLocMask = ~chunkBlockMask;
 
 struct World;
+enum struct PerlinInstance;
 
 using Lookup = std::unordered_map<long long, float>;
 
@@ -38,14 +39,15 @@ struct Chunk {
 	static constexpr BlockCoord decomposeChunkFromBlock(BlockCoord bc);
 	static constexpr std::pair <BlockCoord, BlockCoord> decomposeBlockPos(BlockCoord bc);
 
+	static float getBlerpWorldgenVal(BlockCoord x, BlockCoord y, World *world, PerlinInstance instance);
+	static constexpr BlockCoord blockHeight(float height);
+
 	std::array <std::unique_ptr<Block>, chunkSize * chunkSize * chunkSize> blocks;
 
 	std::mutex chunkMeshMutex;
 private:
 	std::unique_ptr<Mesh> chunkMesh;
 	std::unique_ptr<MeshData> chunkMeshData;
-	std::array <bool, chunkSize * chunkSize * chunkSize> solids;
-	std::vector <std::tuple<BlockCoord, BlockCoord, BlockCoord>> dirtyChunks;
 	static int blockPos(BlockCoord x, BlockCoord y, BlockCoord z);
 };
 
@@ -59,4 +61,8 @@ constexpr BlockCoord Chunk::decomposeChunkFromBlock(BlockCoord bc) {
 
 constexpr std::pair<BlockCoord, BlockCoord> Chunk::decomposeBlockPos(BlockCoord bc) {
 	return { decomposeLocalBlockFromBlock(bc), decomposeChunkFromBlock(bc) };
+}
+
+constexpr BlockCoord Chunk::blockHeight(float height) {
+	return (BlockCoord)(60.0f + height * 15.0f);
 }

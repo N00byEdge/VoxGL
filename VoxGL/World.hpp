@@ -4,6 +4,7 @@
 
 #include "PerlinNoise.hpp"
 #include "Blocks.hpp"
+#include "Maths.hpp"
 
 #include <thread>
 #include <map>
@@ -15,16 +16,39 @@ struct Shader;
 struct Chunk;
 struct Block;
 
-using ChunkIndex = long long;
-constexpr ChunkIndex chunkIndexBits = 21;
-static_assert(sizeof(ChunkIndex) * 8 > chunkIndexBits * 3, "Too many chunkPosBits for ChunkIndex type!");
-constexpr BlockCoord chunkIndexMask = (1 << chunkIndexBits) - 1;
-
 enum struct PerlinInstance : BlockCoord {
 	Height,
 	Temperature,
 	Humidity,
 };
+
+template <int precision>
+struct WorldgenPrecision {
+	const static int num = 1 << precision;
+	const static int noiseArg = precision;
+};
+
+constexpr WorldgenPrecision<3> heightPrecision;
+constexpr WorldgenPrecision<3> humidityPrecision;
+constexpr WorldgenPrecision<3> temperaturePrecision;
+
+constexpr std::pair<int, int> getPrecision(PerlinInstance pi) {
+	switch (pi) {
+	case PerlinInstance::Height:
+		return { heightPrecision.num, heightPrecision.noiseArg };
+	case PerlinInstance::Humidity:
+		return { humidityPrecision.num, humidityPrecision.noiseArg };
+	case PerlinInstance::Temperature:
+		return { temperaturePrecision.num, temperaturePrecision.noiseArg };
+	}
+	assert(false);
+	return {0, 0};
+}
+
+using ChunkIndex = long long;
+constexpr ChunkIndex chunkIndexBits = 21;
+static_assert(sizeof(ChunkIndex) * 8 > chunkIndexBits * 3, "Too many chunkPosBits for ChunkIndex type!");
+constexpr BlockCoord chunkIndexMask = (1 << chunkIndexBits) - 1;
 
 struct World {
 	World(glm::vec3 *const position);
@@ -45,36 +69,17 @@ private:
 	glm::vec3 *const position;
 	std::mutex chunkMutex;
 	int seed = 0;
+	std::mutex worldgenMapMutex;
 
 	std::unordered_map<long long, float> heightmap;
 	std::unordered_map<long long, float> temperaturemap;
 	std::unordered_map<long long, float> humiditymap;
 
-	friend inline float getWorldgenVal(BlockCoord, BlockCoord, World &, PerlinInstance);
+	friend float getWorldgenVal(BlockCoord, BlockCoord, World &, PerlinInstance);
 
 	std::unordered_map<ChunkIndex, std::shared_ptr<Chunk>> chunks;
 	//std::unordered_map<ChunkIndex, std::shared_ptr<std::set<std::function<void>>>> eventCallbacks;
 	std::thread worldgenThread;
 };
 
-inline float getWorldgenVal(BlockCoord x, BlockCoord y, World &world, PerlinInstance instance) {
-	auto cache = [&]() {
-		if (instance == PerlinInstance::Height)
-			return world.heightmap;
-
-		else if (instance == PerlinInstance::Temperature)
-			return world.temperaturemap;
-
-		else if (instance == PerlinInstance::Humidity)
-			return world.humiditymap;
-
-		return world.heightmap;
-	}();
-
-	auto comp = (long long)x << 32 | y;
-	auto it = cache.find(comp);
-
-	if (it == cache.end())
-		return cache[comp] = perlinNoise<2>(x, y, world.seed, (int) instance);
-	else return it->second;
-}
+float getWorldgenVal(BlockCoord x, BlockCoord y, World &world, PerlinInstance instance);

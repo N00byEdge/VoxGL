@@ -2,7 +2,6 @@
 
 #include "Blocks.hpp"
 #include "BlockFaceMesh.hpp"
-
 #include "World.hpp"
 
 #include "Maths.hpp"
@@ -16,19 +15,31 @@ const static auto forEachBlock = [&](auto callable) {
 				callable(x, y, z);
 };
 
-constexpr BlockCoord blockHeight(float height) {
-	return (BlockCoord)(60.0f + height * 15.0f);
+float Chunk::getBlerpWorldgenVal(BlockCoord x, BlockCoord y, World *world, PerlinInstance instance) {
+	auto num = getPrecision(instance).first;
+	auto f00 = getWorldgenVal(x, y, *world, instance);
+	auto f10 = getWorldgenVal(x + num, y, *world, instance);
+	auto f01 = getWorldgenVal(x, y + num, *world, instance);
+	auto f11 = getWorldgenVal(x + num, y + num, *world, instance);
+	
+	x = posmod(x, getPrecision(instance).first);
+	y = posmod(y, getPrecision(instance).first);
+
+	auto h = blerp(f00, f01, f10, f11, (float)x / (num - 1), (float)y / (num - 1));
+	h = blerp(f00, f01, f10, f11, (float)x / (num - 1), (float)y / (num - 1));
+	return h;
 }
 
 Chunk::Chunk(BlockCoord x, BlockCoord y, BlockCoord z, World *world) {
 	x *= chunkSize, y *= chunkSize, z *= chunkSize;
 	for (BlockCoord bx = 0; bx < chunkSize; ++bx) {
 		for (BlockCoord by = 0; by < chunkSize; ++by) {
-			auto bh00 = getWorldgenVal(x + bx, y + by, *world, PerlinInstance::Height);
-			auto bh10 = getWorldgenVal(x + bx + 8, y + by, *world, PerlinInstance::Height);
-			auto bh01 = getWorldgenVal(x + bx, y + by + 8, *world, PerlinInstance::Height);
-			auto bh11 = getWorldgenVal(x + bx + 8, y + by + 8, *world, PerlinInstance::Height);
-			auto bh = blockHeight(blerp(bh00, bh01, bh10, bh11, (float)(bx % 8) / 7, (float)(by % 8) / 7));
+			auto bh = blockHeight(getBlerpWorldgenVal(x + bx, y + by, world, PerlinInstance::Height));
+			//auto bh00 = getWorldgenVal(x + bx, y + by, *world, PerlinInstance::Height);
+			//auto bh10 = getWorldgenVal(x + bx + heightPrecision.num, y + by, *world, PerlinInstance::Height);
+			//auto bh01 = getWorldgenVal(x + bx, y + by + 8, *world, PerlinInstance::Height);
+			//auto bh11 = getWorldgenVal(x + bx + 8, y + by + 8, *world, PerlinInstance::Height);
+			//auto bh = blockHeight(blerp(bh00, bh01, bh10, bh11, (float)(((bx % 8) + 8) % 8) / 7, (float)(((by % 8) + 8) % 8) / 7));
 			for (BlockCoord bz = 0; bz < chunkSize; ++bz) {
 				if (bz + z < bh)
 					blocks[blockPos(bx, by, bz)] = std::make_unique<BasicBlock>(bz + z == bh - 1 ? static_cast<BlockID>(Blocks::Grass) : static_cast<BlockID>(Blocks::Dirt), x + bx, y + by, z + bz);
@@ -53,12 +64,9 @@ Block *Chunk::blockAtExternal(BlockCoord x, BlockCoord y, BlockCoord z, BlockCoo
 }
 
 void Chunk::draw(float deltaT, const glm::vec3 &worldPos) {
-	if(chunkMeshMutex.try_lock()) {
-		if (chunkMeshData) {
-			chunkMesh = std::make_unique<Mesh>(chunkMeshData->vertices, chunkMeshData->indices);
-			chunkMeshData.release();
-		}
-		chunkMeshMutex.unlock();
+	if (std::lock_guard<std::mutex> lck(chunkMeshMutex); chunkMeshData) {
+		chunkMesh = std::make_unique<Mesh>(chunkMeshData->vertices, chunkMeshData->indices);
+		chunkMeshData.release();
 	}
 
 	if(chunkMesh)
