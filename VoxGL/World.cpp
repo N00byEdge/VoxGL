@@ -109,7 +109,7 @@ void World::worldgen() {
 
 		for (BlockCoord x = (BlockCoord)(position->x / chunkSize - worldgenDist - 1); x <= (BlockCoord)(position->x / chunkSize + worldgenDist) && generating; ++x) {
 			for (BlockCoord y = (BlockCoord)(position->y / chunkSize - worldgenDist - 1); y <= (BlockCoord)(position->y / chunkSize + worldgenDist) && generating; ++y) {
-				auto xd = .5f + x - position->x, yd = .5f + y - position->y;
+				auto xd = .5f + x - position->x/chunkSize, yd = .5f + y - position->y / chunkSize;
 				if (xd * xd + yd * yd > worldgenDist * worldgenDist) continue;
 				auto height = Chunk::blockHeight(Chunk::getBlerpWorldgenVal(x * chunkSize, y * chunkSize, this, PerlinInstance::Height));
 				for (BlockCoord z = (BlockCoord)0; z <= ceil((float)height/chunkSize); ++z) {
