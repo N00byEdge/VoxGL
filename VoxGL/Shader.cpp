@@ -62,6 +62,7 @@ shaders([&]() {
 uniforms([&]() {
 	std::array<GLuint, U_NUM> arr{};
 	arr[U_TRANSFORM] = glGetUniformLocation(program, "transform");
+	arr[U_BLOCKTRASLATION] = glGetUniformLocation(program, "blockTraslation");
 	return arr;
 }()) {
 	assert(glGetError() == GL_NO_ERROR);
@@ -79,8 +80,9 @@ void Shader::bind() {
 	glUseProgram(program);
 }
 
-void Shader::update(const glm::mat4 &transform, const glm::mat4 &camera) {
+void Shader::update(const glm::mat4 &transform, const glm::mat4 &camera, const glm::vec3 &renderTranslation) {
 	glm::mat4 result = camera * transform;
 	
 	glUniformMatrix4fv(uniforms[U_TRANSFORM], 1, GL_FALSE, &result[0][0]);
+	glUniform3fv(uniforms[U_BLOCKTRASLATION], 1, &renderTranslation.x);
 }
