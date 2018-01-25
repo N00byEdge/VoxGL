@@ -138,7 +138,12 @@
     <ClInclude Include="Block.hpp" />
     <ClInclude Include="BlockFaceMesh.hpp" />
     <ClInclude Include="Blocks.hpp" />
-    <ClInclude Include="Chunk.hpp" />
+    <ClInclude Include="Chunk.hpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Config.hpp" />
     <ClInclude Include="Game.hpp" />
     <ClInclude Include="GameState.hpp" />
@@ -154,6 +159,7 @@
     <ClInclude Include="TextureAtlas.hpp" />
     <ClInclude Include="Textures.hpp" />
     <ClInclude Include="Transform.hpp" />
+    <ClInclude Include="Util.hpp" />
     <ClInclude Include="World.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -174,8 +180,10 @@
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\basicShader.fs" />
-    <None Include="shaders\basicShader.vs" />
+    <None Include="shader2D.fs" />
+    <None Include="shader2D.vs" />
+    <None Include="shaders\shaderBasic.fs" />
+    <None Include="shaders\shaderBasic.vs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

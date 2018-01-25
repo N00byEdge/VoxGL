@@ -82,6 +82,9 @@
     <ClInclude Include="Shaders.hpp">
       <Filter>Graphics</Filter>
     </ClInclude>
+    <ClInclude Include="Util.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MenuState.cpp">
@@ -137,10 +140,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\basicShader.fs">
+    <None Include="shaders\shaderBasic.fs">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\basicShader.vs">
+    <None Include="shaders\shaderBasic.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shader2D.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shader2D.vs">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

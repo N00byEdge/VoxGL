@@ -1,22 +1,37 @@
 #include "Blocks.hpp"
 
-std::shared_ptr<BlockTexture> getBlockTexture(BlockID id) {
-	switch (id) {
-	case blockID<Blocks::Grass>() : {
-		const static std::shared_ptr<BlockTexture> grass = std::make_shared<BlockTexture>(2, 3, 1, 1, 1, 1);
-		return grass;
+BlockHandle registerBlockFactory(const std::string &name, BlockFactory factory) {
+	stringToHandle[name] = (BlockHandle)blockFactoryHandles.size();
+	blockFactoryHandles.push_back(factory);
+	handleToString.push_back(name);
+
+	return (BlockHandle)blockFactoryHandles.size() - 1;
+}
+
+std::unique_ptr<Block> createBlock(int factoryHandle, int x, int y, int z, World *w) {
+	try {
+		return blockFactoryHandles[factoryHandle](x, y, z, w);
 	}
-	case blockID<Blocks::Dirt>() : {
-		const static std::shared_ptr<BlockTexture> dirt = std::make_shared<BlockTexture>(3, 3, 3, 3, 3, 3);
-		return dirt;
+	catch (std::exception &e) {
+		return nullptr;
 	}
-	case blockID<Blocks::Stone>() : {
-		const static std::shared_ptr<BlockTexture> stone = std::make_shared<BlockTexture>(4, 4, 4, 4, 4, 4);
-		return stone;
+}
+
+const static std::string invalid = "Invalid";
+
+const std::string &getBlockName(int blockHandle) {
+	try {
+		return handleToString[blockHandle];
 	}
-	default: {
-		const static std::shared_ptr<BlockTexture> no_texture = std::make_shared<BlockTexture>(0, 0, 0, 0, 0, 0);
-		return no_texture;
+	catch (std::exception &e) {
+		return invalid;
 	}
-	}	
+}
+
+BlockHandle getBlockHandle(std::string blockName) {
+	auto it = stringToHandle.find(blockName);
+	if (it != stringToHandle.end())
+		return it->second;
+
+	return -1;
 }

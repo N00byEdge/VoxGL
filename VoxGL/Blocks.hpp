@@ -1,35 +1,25 @@
 #pragma once
 
-using BlockID = int;
-using BlockCoord = int;
+struct Block;
+struct BlockTexture;
+struct World;
 
 #include <vector>
 #include <string>
 #include <memory>
+#include <unordered_map>
+#include <functional>
 
-#include "Textures.hpp"
+#include "Block.hpp"
 
-const static std::vector <std::string> blockNames {
-	"Stone",
-	"Dirt",
-	"Grass",
-};
+using BlockFactory = std::function<std::unique_ptr<Block>(BlockCoord, BlockCoord, BlockCoord, World *)>;
 
-enum struct Blocks : BlockID {
-	Stone,
-	Dirt,
-	Grass,
+extern std::unordered_map<std::string, BlockHandle> stringToHandle;
+extern std::vector <BlockFactory> blockFactoryHandles;
+extern std::vector <std::string> handleToString;
 
-	numBlocks
-};
+BlockHandle registerBlockFactory(const std::string &name, BlockFactory factory);
 
-template <Blocks b>
-constexpr BlockID blockID() {
-	return static_cast<int>(b);
-}
-
-constexpr BlockID blockID(Blocks b) {
-	return static_cast<BlockID>(b);
-}
-
-std::shared_ptr<BlockTexture> getBlockTexture(BlockID blockID);
+std::unique_ptr<Block> createBlock(int factoryHandle, int x, int y, int z, World *);
+const std::string &getBlockName(int blockHandle);
+BlockHandle getBlockHandle(std::string blockName);

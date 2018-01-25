@@ -48,5 +48,5 @@ public:
 	const void *postWindowInit;
 
 	// Shaders
-	Shader basicShader;
+	Shader shaderBasic;
 };

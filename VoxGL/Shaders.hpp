@@ -2,5 +2,5 @@
 
 #include <string>
 
-extern const std::string basicVS;
-extern const std::string basicFS;
+extern const std::string vsBasic;
+extern const std::string fsBasic;

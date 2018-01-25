@@ -10,15 +10,13 @@
 #include "Transform.hpp"
 #include <cmath>
 
-//#include "BasicBlockMesh.hpp"
-
 #include "Blocks.hpp"
 #include "Textures.hpp"
 #include "PerlinNoise.hpp"
 
 #include <cmath>
 
-IngameState::IngameState(Game *g, sf::Window &window): GameState(g), w(&position) {
+IngameState::IngameState(Game *g, sf::Window &window): GameState(g), w(&position, 0) {
 	if(!releaseCursor) sf::Mouse::setPosition({(int)window.getSize().x / 2, (int)window.getSize().y / 2}, window);
 }
 
@@ -26,7 +24,10 @@ FrameRet IngameState::frame(Game *g, sf::Window &window, float timeDelta) {
 	auto cam = camera(position, lookX, lookZ, -g->fov() * 2, (float)window.getSize().x/window.getSize().y, g->renderDistance());
 	auto lookDir = glm::vec3{0, 0, 0};
 
-	momentum -= momentum * 0.3f * timeDelta;
+	auto dt = std::min(timeDelta, 0.1f);
+
+	if (length(velocity) < 0.5f) velocity *= 0.0f;
+	else velocity -= (drag(velocity, 0.00000001f) * dt) + (0.3f * (velocity / length(velocity)));
 
 	glm::vec3 acceleration{0, 0, 0};
 
@@ -45,31 +46,69 @@ FrameRet IngameState::frame(Game *g, sf::Window &window, float timeDelta) {
 		}
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
-			acceleration.z += 1;
+			acceleration.z += .5f;
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
-			acceleration.z -= 1;
+			acceleration.z -= .5f;
 	}
 	
-	momentum += acceleration * timeDelta * 5.0f;
+	velocity += acceleration * timeDelta * 50.0f;
 
-	position += momentum * timeDelta;
+	position += velocity * timeDelta;
 
-	if(isVerbose) std::cerr << position.x << " " << position.y << " " << position.z << " " << lookX << " " << lookZ << "\n";
+	if(isVerbose) std::cerr << position.x << " " << position.y << " " << position.z << " " << lookX << " " << lookZ << " " << length(velocity) << "\n";
 
-	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+	glClearColor((float)62/255, (float)215/255, (float)249/255, 1.0f);
+	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	assert(glGetError() == GL_NO_ERROR);
 
-	g->basicShader.update(transform(), cam);
-	g->basicShader.bind();
-	w.draw(timeDelta, cam, g->basicShader);
+	g->shaderBasic.update(transform(), cam);
+	g->shaderBasic.bind();
+	w.draw(timeDelta, cam, g->shaderBasic);
 
-	//glLineWidth(2.5f);
-	//glBegin(GL_LINES);
-	//glVertex2f(0.0, 0.0);
-	//glVertex2f(15, 15);
-	//glEnd();
+	if (auto[block, side, x, y, z, dist] = w.raycast(position, forward(lookX, lookZ), 8.0f); block) {
+		glColor3f(0, 0, 0);
+		glBegin(GL_LINES);
+		glVertex3f(x - 0.001f, y - 0.001f, z - 0.001f);
+		glVertex3f(x - 0.001f, y - 0.001f, z + 1.001f);
+		glVertex3f(x - 0.001f, y - 0.001f, z - 0.001f);
+		glVertex3f(x - 0.001f, y + 1.001f, z - 0.001f);
+		glVertex3f(x - 0.001f, y - 0.001f, z - 0.001f);
+		glVertex3f(x + 1.001f, y - 0.001f, z - 0.001f);
+		glVertex3f(x - 0.001f, y - 0.001f, z + 1.001f);
+		glVertex3f(x - 0.001f, y + 1.001f, z + 1.001f);
+		glVertex3f(x - 0.001f, y - 0.001f, z + 1.001f);
+		glVertex3f(x + 1.001f, y - 0.001f, z + 1.001f);
+		glVertex3f(x - 0.001f, y + 1.001f, z - 0.001f);
+		glVertex3f(x - 0.001f, y + 1.001f, z + 1.001f);
+		glVertex3f(x - 0.001f, y + 1.001f, z - 0.001f);
+		glVertex3f(x + 1.001f, y + 1.001f, z - 0.001f);
+		glVertex3f(x + 1.001f, y - 0.001f, z - 0.001f);
+		glVertex3f(x + 1.001f, y + 1.001f, z - 0.001f);
+		glVertex3f(x + 1.001f, y - 0.001f, z - 0.001f);
+		glVertex3f(x + 1.001f, y - 0.001f, z + 1.001f);
+		glVertex3f(x + 1.001f, y + 1.001f, z - 0.001f);
+		glVertex3f(x + 1.001f, y + 1.001f, z + 1.001f);
+		glVertex3f(x + 1.001f, y - 0.001f, z + 1.001f);
+		glVertex3f(x + 1.001f, y + 1.001f, z + 1.001f);
+		glVertex3f(x - 0.001f, y + 1.001f, z + 1.001f);
+		glVertex3f(x + 1.001f, y + 1.001f, z + 1.001f);
+		glEnd();
+	}
+
+	{
+		glUseProgram(0);
+		glDisable(GL_DEPTH_TEST);
+		glColor3f(1.f, 1.f, 1.f);
+		auto xFactor = (float)window.getSize().y / window.getSize().x;
+		glBegin(GL_QUADS);
+		glVertex2f(-0.003 * xFactor, -0.003f);
+		glVertex2f(0.003f * xFactor, -0.003f);
+		glVertex2f(0.003f * xFactor, 0.003f);
+		glVertex2f(-0.003f * xFactor, 0.003f);
+		glEnd();
+	}
 
 	window.setMouseCursorVisible(releaseCursor);
 	window.display();
@@ -119,7 +158,26 @@ void IngameState::handleEvent(Game *g, sf::Window &window, sf::Event &event) {
 				lookZ = -3.1415f / 2;
 
 			sf::Mouse::setPosition({ (int)window.getSize().x / 2, (int)window.getSize().y / 2 }, window);
-			break;
 		}
+		break;
+	case sf::Event::MouseButtonPressed:
+		if (!releaseCursor) {
+			if (auto[block, side, x, y, z, dist] = w.raycast(position, forward(lookX, lookZ), 8.0f); block) {
+				block->remove(x, y, z, w);
+				w.getChunkAtBlock<false>(x, y, z)->regenerateChunkMesh<false>(Chunk::decomposeChunkFromBlock(x), Chunk::decomposeChunkFromBlock(y), Chunk::decomposeChunkFromBlock(z), &w);
+			}
+		}
+		break;
 	}
+}
+
+float IngameState::pressure(float h) {
+	// float p = (2.571610703826904e6f - (1.172433375403285e2f * h) + (0.001781877002114f * h * h) - (9.027612713185521e-9f * h * h * h));
+	float p = (2.574681483305359e6f - (1.173851852033113f * h) + (1.784060919377516e-7f * h * h) - (9.038819697211279e-15f * h * h * h));
+	p = std::max(0.0f, p);
+	return p;
+}
+
+glm::vec3 IngameState::drag(const glm::vec3 &velocity, float coefficient) {
+	return (velocity * length(velocity) * (coefficient * pressure(position.z))) + (coefficient * pressure(position.z) * 100.0f * velocity);
 }

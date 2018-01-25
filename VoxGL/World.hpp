@@ -25,10 +25,10 @@ enum struct PerlinInstance : BlockCoord {
 template <int precision>
 struct WorldgenPrecision {
 	const static int num = 1 << precision;
-	const static int noiseArg = precision;
+	const static int noiseArg = precision - 1;
 };
 
-constexpr WorldgenPrecision<3> heightPrecision;
+constexpr WorldgenPrecision<5> heightPrecision;
 constexpr WorldgenPrecision<3> humidityPrecision;
 constexpr WorldgenPrecision<3> temperaturePrecision;
 
@@ -51,7 +51,7 @@ static_assert(sizeof(ChunkIndex) * 8 > chunkIndexBits * 3, "Too many chunkPosBit
 constexpr BlockCoord chunkIndexMask = (1 << chunkIndexBits) - 1;
 
 struct World {
-	World(glm::vec3 *const position);
+	World(glm::vec3 *const position, long long seed);
 	~World();
 
 	void draw(float deltaT, const glm::mat4 &perspective, Shader &);
@@ -64,13 +64,14 @@ struct World {
 	static constexpr std::tuple <BlockCoord, BlockCoord, BlockCoord> getChunkPos(ChunkIndex ci);
 	static constexpr ChunkIndex getChunkIndexChunk(BlockCoord x, BlockCoord y, BlockCoord z);
 	static constexpr ChunkIndex getChunkIndexBlock(BlockCoord x, BlockCoord y, BlockCoord z);
+
+	std::mutex chunkMutex;
 private:
 	bool generating = true;
 	void worldgen();
 	glm::vec3 *const position;
-	std::mutex chunkMutex;
-	int seed = 0;
 	std::mutex worldgenMapMutex;
+	int seed;
 
 	std::unordered_map<long long, float> heightmap;
 	std::unordered_map<long long, float> temperaturemap;

@@ -36,7 +36,8 @@ Chunk::Chunk(BlockCoord x, BlockCoord y, BlockCoord z, World *world) {
 			//auto bh = blockHeight(blerp(bh00, bh01, bh10, bh11, (float)(((bx % 8) + 8) % 8) / 7, (float)(((by % 8) + 8) % 8) / 7));
 			for (BlockCoord bz = 0; bz < chunkSize; ++bz) {
 				if (bz + z < bh)
-					blocks[blockPos(bx, by, bz)] = std::make_unique<BasicBlock>(bz + z == bh - 1 ? static_cast<BlockID>(Blocks::Grass) : static_cast<BlockID>(Blocks::Dirt), x + bx, y + by, z + bz);
+					blocks[blockPos(bx, by, bz)] = createBlock(bz + z == bh - 1, x + bx, y + by, z + bz, world);
+					//std::make_unique<BasicBlock>(bz + z == bh - 1 ? static_cast<BlockHandle>(Blocks::Grass) : static_cast<BlockHandle>(Blocks::Dirt), x + bx, y + by, z + bz);
 			}
 		}
 	}
@@ -60,16 +61,6 @@ void Chunk::draw(float deltaT, const glm::vec3 &worldPos) {
 
 	if(chunkMesh)
 		chunkMesh->draw();
-
-	if constexpr(isDebugging) {
-		glLineWidth(2.5f);
-		glColor3f(1.f, 1.f, 1.f);
-
-		glBegin(GL_LINES);
-		glVertex3f(worldPos.x * chunkSize, worldPos.y * chunkSize, worldPos.z * chunkSize);
-		glVertex3f((worldPos.x + 1.f) * chunkSize, (worldPos.y + 1.f) * chunkSize, (worldPos.z + 1.f) * chunkSize);
-		glEnd();
-	}
 }
 
 int Chunk::blockPos(BlockCoord x, BlockCoord y, BlockCoord z) {

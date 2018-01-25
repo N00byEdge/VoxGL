@@ -51,8 +51,6 @@ postWindowInit([&]() {
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	glEnable(GL_DEPTH_TEST);
-
 	assert(glGetError() == GL_NO_ERROR);
 
 	loadTextures(texturePath());
@@ -60,9 +58,9 @@ postWindowInit([&]() {
 	return nullptr;
 }()),
 
-basicShader(basicVS, basicFS) {
+shaderBasic(vsBasic, fsBasic) {
 
-	basicShader.bind();
+	shaderBasic.bind();
 
 	gameState = this;
 	setFrameTime(maxFPS());
@@ -84,10 +82,10 @@ basicShader(basicVS, basicFS) {
 		auto frameStart = std::chrono::high_resolution_clock::now();
 		sf::Event event;
 
-		while (gameWindow.pollEvent(event)) {
+		while (gameWindow.pollEvent(event))
 			if(states.size())
 				states.back()->handleEvent(this, gameWindow, event);
-		}
+
 		auto lastState = states.back().get();
 		if constexpr(isDebugging) frame();
 		else {

@@ -81,6 +81,7 @@ void Shader::bind() {
 }
 
 void Shader::update(const glm::mat4 &transform, const glm::mat4 &camera, const glm::vec3 &renderTranslation) {
+	glUseProgram(program);
 	glm::mat4 result = camera * transform;
 	
 	glUniformMatrix4fv(uniforms[U_TRANSFORM], 1, GL_FALSE, &result[0][0]);
