@@ -163,8 +163,9 @@ void IngameState::handleEvent(Game *g, sf::Window &window, sf::Event &event) {
 	case sf::Event::MouseButtonPressed:
 		if (!releaseCursor) {
 			if (auto[block, side, x, y, z, dist] = w.raycast(position, forward(lookX, lookZ), 8.0f); block) {
-				block->remove(x, y, z, w);
-				w.getChunkAtBlock<false>(x, y, z)->regenerateChunkMesh<false>(Chunk::decomposeChunkFromBlock(x), Chunk::decomposeChunkFromBlock(y), Chunk::decomposeChunkFromBlock(z), &w);
+				auto xx = Chunk::decomposeBlockPos(x), yy = Chunk::decomposeBlockPos(y), zz = Chunk::decomposeBlockPos(z);
+				auto c = w.getChunk<false>(xx.second, yy.second, zz.second);
+				c->removeBlockAt(xx.first, yy.first, zz.first);
 			}
 		}
 		break;
@@ -172,7 +173,6 @@ void IngameState::handleEvent(Game *g, sf::Window &window, sf::Event &event) {
 }
 
 float IngameState::pressure(float h) {
-	// float p = (2.571610703826904e6f - (1.172433375403285e2f * h) + (0.001781877002114f * h * h) - (9.027612713185521e-9f * h * h * h));
 	float p = (2.574681483305359e6f - (1.173851852033113f * h) + (1.784060919377516e-7f * h * h) - (9.038819697211279e-15f * h * h * h));
 	p = std::max(0.0f, p);
 	return p;

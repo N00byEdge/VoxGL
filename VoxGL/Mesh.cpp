@@ -51,6 +51,9 @@ Mesh::~Mesh() {
 }
 
 void Mesh::draw() const {
+	if (!count)
+		return;
+
 	glBindVertexArray(vertexArrayObject);
 
 	glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, 0);

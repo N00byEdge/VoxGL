@@ -3,15 +3,15 @@
 #include "Chunk.hpp"
 #include "Game.hpp"
 
+#include "Util.hpp"
+
 #include <future>
 
-constexpr float worldgenDist = isDebugging ? 3.0f : 10.0f;
-constexpr float zMod = 3.0f;
+constexpr float worldgenDist = isDebugging ? 10.f : 15.f;
 
 World::World(glm::vec3 *const position, long long seed) : position(position), worldgenThread(&World::worldgen, this), seed((decltype(this->seed))seed) {
 	
 }
-
 
 World::~World() {
 	generating = false;
@@ -128,12 +128,19 @@ constexpr ChunkIndex World::getChunkIndexBlock(BlockCoord x, BlockCoord y, Block
 
 void World::worldgen() {
 	const static auto makeChunk = [&](BlockCoord cx, BlockCoord cy, BlockCoord cz, ChunkIndex ci) {
-		auto c = std::make_unique<Chunk>(cx, cy, cz, this);
+		auto c = std::make_shared<Chunk>(cx, cy, cz, this);
 		{
 			std::lock_guard<std::mutex> lck(chunkMutex);
-			chunks[ci] = std::move(c);
+			chunks[ci] = c;
+
+			// Hunt for adjacent chunks!
+			for (auto[dx, dy, dz] : vdxyz) {
+				if (auto adjC = getChunk<true>(cx + dx, cy + dy, cz + dz)) {
+					adjC->onAdjacentChunkLoad(-dx, -dy, -dz, std::weak_ptr<Chunk>{ c });
+					c->onAdjacentChunkLoad(dx, dy, dz, adjC);
+				}
+			}
 		}
-		chunkUpdated<false>(cx, cy, cz);
 	};
 
 	while (generating) {
@@ -141,9 +148,8 @@ void World::worldgen() {
 
 		for (BlockCoord x = (BlockCoord)(position->x / chunkSize - worldgenDist - 1); x <= (BlockCoord)(position->x / chunkSize + worldgenDist) && generating; ++x) {
 			for (BlockCoord y = (BlockCoord)(position->y / chunkSize - worldgenDist - 1); y <= (BlockCoord)(position->y / chunkSize + worldgenDist) && generating; ++y) {
-				for (BlockCoord z = (BlockCoord)(position->z / chunkSize - worldgenDist - 1); z <= (BlockCoord)(position->z / chunkSize + worldgenDist) && generating; ++z) {
+				for (BlockCoord z = std::max(0, (BlockCoord)(position->z / chunkSize - worldgenDist - 1)); z <= (BlockCoord)(position->z / chunkSize + worldgenDist) && generating; ++z) {
 					auto xd = .5f + x - position->x/chunkSize, yd = .5f + y - position->y / chunkSize, zd = .5f + z - position->z / chunkSize;
-					zd *= zMod;
 					if (xd * xd + yd * yd + zd * zd > worldgenDist * worldgenDist) continue;
 					auto height = Chunk::blockHeight(Chunk::getBlerpWorldgenVal(x * chunkSize, y * chunkSize, this, PerlinInstance::Height));
 					auto ci = getChunkIndexChunk(x, y, z);

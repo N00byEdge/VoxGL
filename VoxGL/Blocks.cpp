@@ -1,5 +1,9 @@
 #include "Blocks.hpp"
 
+const static std::vector <BlockCoord> vx{ { 1 },{ -1 } };
+const static std::vector <std::tuple<BlockCoord, BlockCoord>> vdxy{ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+const static std::vector <std::tuple<BlockCoord, BlockCoord, BlockCoord>> vdxyz{ { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 } };
+
 BlockHandle registerBlockFactory(const std::string &name, BlockFactory factory) {
 	stringToHandle[name] = (BlockHandle)blockFactoryHandles.size();
 	blockFactoryHandles.push_back(factory);

@@ -26,7 +26,7 @@ const static auto forEachBlock = [&](auto callable) {
 struct Chunk {
 	// Construct a chunk with the chunk coordinates x, y, z
 	Chunk(BlockCoord x, BlockCoord y, BlockCoord z, World *);
-	Chunk(BlockCoord x, BlockCoord y, BlockCoord z, std::istream &is);
+	Chunk(BlockCoord x, BlockCoord y, BlockCoord z, World *, std::istream &is);
 
 	// x, y, z, relative to chunk, Returns block inside the chunk. No chunk bounds check, use for fast access and that only.
 	Block *blockAt(BlockCoord x, BlockCoord y, BlockCoord z);
@@ -35,13 +35,17 @@ struct Chunk {
 	Block *blockAtSafe(BlockCoord x, BlockCoord y, BlockCoord z);
 
 	// x, y, z, relative to the chunk. If not inside the chunk, it will use World * and ask it for the block. cx, cy, cz starting block coordinates for the chunk
-	template <bool alreadyHasMutex> Block *blockAtExternal(BlockCoord x, BlockCoord y, BlockCoord z, BlockCoord cx, BlockCoord cy, BlockCoord cz, World *);
+	template <bool alreadyHasMutex> Block *blockAtExternal(BlockCoord x, BlockCoord y, BlockCoord z);
+	Block *blockAtAdjacent(BlockCoord x, BlockCoord y, BlockCoord z);
 
 	// Regenerates the mesh for the chunk. x, y, z are chunk coordinates (not block coordinates)
-	template <bool alreadyHasMutex> void regenerateChunkMesh(BlockCoord x, BlockCoord y, BlockCoord z, World *);
+	void regenerateChunkMesh();
 
 	// Draws the chunk mesh
 	void draw(float deltaT, const glm::vec3 &pos);
+
+	void onAdjacentChunkLoad(BlockCoord relX, BlockCoord relY, BlockCoord relZ, std::weak_ptr<Chunk> chunk);
+	std::vector<std::shared_ptr<Chunk>> getAdjacentChunks();
 
 	static constexpr BlockCoord decomposeLocalBlockFromBlock(BlockCoord bc);
 	static constexpr BlockCoord decomposeChunkFromBlock(BlockCoord bc);
@@ -51,11 +55,17 @@ struct Chunk {
 	static float getBlerpWorldgenVal(BlockCoord x, BlockCoord y, World *world, PerlinInstance instance);
 	static constexpr BlockCoord blockHeight(float height);
 
+	void removeBlockAt(BlockCoord x, BlockCoord y, BlockCoord z);
+
 	std::ostream &operator<<(std::ostream &os);
 
 	std::array <std::unique_ptr<Block>, chunkSize * chunkSize * chunkSize> blocks;
+	std::array <std::weak_ptr<Chunk>, 6> adjacentChunks;
 
 	std::mutex chunkMeshMutex;
+
+	BlockCoord x, y, z, cx, cy, cz;
+	World &w;
 private:
 	std::unique_ptr<Mesh> chunkMesh;
 	std::unique_ptr<MeshData> chunkMeshData;
@@ -64,70 +74,10 @@ private:
 #include "World.hpp"
 
 template <bool alreadyHasMutex>
-Block *Chunk::blockAtExternal(BlockCoord x, BlockCoord y, BlockCoord z, BlockCoord cx, BlockCoord cy, BlockCoord cz, World *world) {
-	if (0 <= x && x < chunkSize && 0 <= y && y < chunkSize && 0 <= z && z < chunkSize) return blockAt(x, y, z);
-	return world->blockAt<alreadyHasMutex>(x + cx, y + cy, z + cz);
+Block *Chunk::blockAtExternal(BlockCoord _x, BlockCoord _y, BlockCoord _z) {
+	if (0 <= _x && _x < chunkSize && 0 <= _y && _y < chunkSize && 0 <= _z && _z < chunkSize) return blockAt(_x, _y, _z);
+	return w.blockAt<alreadyHasMutex>(_x + x, _y + y, _z + z);
 }
-
-const static auto addFace = [](BlockCoord bx, BlockCoord by, BlockCoord bz, BlockSide face, Block *b, MeshData &meshData) {
-	auto md = b->getMesh(bx, by, bz, face);
-
-	for (auto &ind : md.indices)
-		meshData.indices.push_back((GLuint)(ind + meshData.vertices.size()));
-	for (auto &vert : md.vertices)
-		meshData.vertices.push_back(vert);
-};
-
-template <>
-inline void Chunk::regenerateChunkMesh<true>(BlockCoord wx, BlockCoord wy, BlockCoord wz, World *world) {
-	wx *= chunkSize, wy *= chunkSize, wz *= chunkSize;
-
-	auto meshData = std::make_unique<MeshData>();
-
-	forEachBlock([&](BlockCoord x, BlockCoord y, BlockCoord z) {
-		auto b = blockAtSafe(x, y, z);
-
-		if (b) {
-			auto block = blockAtExternal<true>(x + 1, y, z, wx, wy, wz, world);
-			if (!block || !block->isSolid())
-				addFace(wx + x, wy + y, wz + z, BlockSide::Right, b, *meshData);
-
-			block = blockAtExternal<true>(x - 1, y, z, wx, wy, wz, world);
-			if (!block || !block->isSolid())
-				addFace(wx + x, wy + y, wz + z, BlockSide::Left, b, *meshData);
-
-			block = blockAtExternal<true>(x, y + 1, z, wx, wy, wz, world);
-			if (!block || !block->isSolid())
-				addFace(wx + x, wy + y, wz + z, BlockSide::Back, b, *meshData);
-
-			block = blockAtExternal<true>(x, y - 1, z, wx, wy, wz, world);
-			if (!block || !block->isSolid())
-				addFace(wx + x, wy + y, wz + z, BlockSide::Front, b, *meshData);
-
-			block = blockAtExternal<true>(x, y, z + 1, wx, wy, wz, world);
-			if (!block || !block->isSolid())
-				addFace(wx + x, wy + y, wz + z, BlockSide::Top, b, *meshData);
-
-			block = blockAtExternal<true>(x, y, z - 1, wx, wy, wz, world);
-			if (!block || !block->isSolid())
-				addFace(wx + x, wy + y, wz + z, BlockSide::Bottom, b, *meshData);
-		}
-	});
-
-	{
-		std::lock_guard<std::mutex> meshLock(chunkMeshMutex);
-		chunkMeshData = std::move(meshData);
-	}
-
-	//chunkMesh = std::make_unique<Mesh>(meshData->vertices, meshData->indices);
-}
-
-template <>
-inline void Chunk::regenerateChunkMesh<false>(BlockCoord wx, BlockCoord wy, BlockCoord wz, World *world) {
-	std::lock_guard<std::mutex> chunkLock(world->chunkMutex);
-	return regenerateChunkMesh<true>(wx, wy, wz, world);
-}
-
 
 constexpr BlockCoord Chunk::decomposeLocalBlockFromBlock(BlockCoord bc) {
 	return bc & chunkBlockMask;

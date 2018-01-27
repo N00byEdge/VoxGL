@@ -13,6 +13,9 @@ struct World;
 #include "Block.hpp"
 
 using BlockFactory = std::function<std::unique_ptr<Block>(BlockCoord, BlockCoord, BlockCoord, World *)>;
+const extern std::vector <BlockCoord> vx;
+const extern std::vector <std::tuple<BlockCoord, BlockCoord>> vdxy;
+const extern std::vector <std::tuple<BlockCoord, BlockCoord, BlockCoord>> vdxyz;
 
 extern std::unordered_map<std::string, BlockHandle> stringToHandle;
 extern std::vector <BlockFactory> blockFactoryHandles;
