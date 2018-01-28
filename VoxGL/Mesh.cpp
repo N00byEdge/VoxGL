@@ -50,7 +50,8 @@ Mesh::Mesh(const std::vector <MeshPoint> &vertices, const std::vector<unsigned> 
 }
 
 Mesh::~Mesh() {
-	glDeleteVertexArrays(VB_NUM, &vertexArrayObject);
+	if(count)
+		glDeleteVertexArrays(VB_NUM, &vertexArrayObject);
 }
 
 void Mesh::draw() const {
