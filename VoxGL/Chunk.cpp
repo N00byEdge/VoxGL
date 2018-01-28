@@ -19,9 +19,7 @@ float Chunk::getBlerpWorldgenVal(BlockCoord x, BlockCoord y, World *world, Perli
 	x = posmod(x, getPrecision(instance).first);
 	y = posmod(y, getPrecision(instance).first);
 
-	auto h = blerp(f00, f01, f10, f11, (float)x / (num - 1), (float)y / (num - 1));
-	h = blerp(f00, f01, f10, f11, (float)x / (num - 1), (float)y / (num - 1));
-	return h;
+	return blerp(f00, f01, f10, f11, (float)x / (num - 1), (float)y / (num - 1));
 }
 
 Chunk::Chunk(BlockCoord _x, BlockCoord _y, BlockCoord _z, World *world): w(*world), x(_x * chunkSize), y(_y * chunkSize), z(_z * chunkSize), cx(_x), cy(_y), cz(_z) {

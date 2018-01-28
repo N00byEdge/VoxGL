@@ -10,6 +10,9 @@
 #include "SFML/Graphics/Texture.hpp"
 
 Mesh::Mesh(const std::vector <MeshPoint> &vertices, const std::vector<unsigned> &indices): count((unsigned int) indices.size()) {
+	if (!count)
+		return;
+
 	std::vector <MeshPoint::WorldPos> locVerts(vertices.size());
 	for (size_t i = 0; i < vertices.size(); ++i) locVerts[i] = vertices[i].loc;
 	std::vector <MeshPoint::TextPos> textVerts(vertices.size());
