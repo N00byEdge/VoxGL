@@ -121,15 +121,11 @@ template <bool alreadyHasMutex>
 std::shared_ptr<Chunk> World::getChunk(BlockCoord x, BlockCoord y, BlockCoord z) {
 	if (z < 0) return nullptr;
 	auto ci = getChunkIndexChunk(x, y, z);
-	if constexpr(alreadyHasMutex) {
-		auto chunk = chunks.find(ci);
-		if (chunk == chunks.end()) return nullptr;
-		else return chunk->second;
-	}
-	else constexpr {
-		std::lock_guard<std::mutex> lck(chunkMutex);
-		auto chunk = chunks.find(ci);
-		if (chunk == chunks.end()) return nullptr;
-		else return chunk->second;
-	}
+	std::unique_lock<std::mutex> lck(chunkMutex, std::defer_lock);
+	if constexpr(!alreadyHasMutex)
+		lck.lock();
+
+	auto chunk = chunks.find(ci);
+	if (chunk == chunks.end()) return nullptr;
+	else return chunk->second;
 }
