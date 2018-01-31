@@ -45,10 +45,42 @@ constexpr std::pair<int, int> getPrecision(PerlinInstance pi) {
 	return {0, 0};
 }
 
-using ChunkIndex = long long;
-constexpr ChunkIndex chunkIndexBits = 21;
-static_assert(sizeof(ChunkIndex) * 8 > chunkIndexBits * 3, "Too many chunkPosBits for ChunkIndex type!");
-constexpr BlockCoord chunkIndexMask = (1 << chunkIndexBits) - 1;
+union ChunkIndex {
+	constexpr ChunkIndex(BlockCoord x, BlockCoord y, BlockCoord z): x(x), y(y), z(z) { }
+	constexpr ChunkIndex(const ChunkIndex &other): repr(other.repr) { }
+
+	template <size_t ind>
+	constexpr decltype(auto) get() const {
+		     if constexpr(ind == 0) return (x);
+		else if constexpr(ind == 1) return (y);
+		else if constexpr(ind == 2) return (z);
+	}
+
+	constexpr bool operator==(const ChunkIndex &other) const { return repr == other.repr; }
+	constexpr bool operator< (const ChunkIndex &other) const { return repr <  other.repr; }
+
+	struct {
+		long long x : 22;
+		long long y : 22;
+		unsigned long long z : 20;
+	};
+
+	long long repr;
+};
+
+namespace std {
+	template <> struct tuple_size<ChunkIndex> : public integral_constant<size_t, 3> { };
+
+	template<size_t ind> struct tuple_element<ind, ChunkIndex> {
+		using type = decltype(std::declval<ChunkIndex>().get<ind>());
+	};
+
+	template <> struct hash<ChunkIndex> {
+		size_t operator()(const ChunkIndex &ci) const { return std::hash<long long>{}(ci.repr); }
+	};
+}
+
+static_assert(sizeof(ChunkIndex) <= 8, "ChunkIndex too large");
 
 struct World {
 	World(glm::vec3 *const position, long long seed);
@@ -60,8 +92,6 @@ struct World {
 	template <bool alreadyHasMutex> std::shared_ptr<Chunk> getChunkAtBlock(BlockCoord x, BlockCoord y, BlockCoord z);
 	template <bool alreadyHasMutex> std::shared_ptr<Chunk> getChunk(BlockCoord x, BlockCoord y, BlockCoord z);
 	std::tuple<Block *, BlockSide, BlockCoord, BlockCoord, BlockCoord, float> raycast(glm::vec3 from, glm::vec3 dir, float maxDist);
-	static constexpr std::tuple <BlockCoord, BlockCoord, BlockCoord> getChunkPos(ChunkIndex ci);
-	static constexpr ChunkIndex getChunkIndexChunk(BlockCoord x, BlockCoord y, BlockCoord z);
 	static constexpr ChunkIndex getChunkIndexBlock(BlockCoord x, BlockCoord y, BlockCoord z);
 
 	std::mutex chunkMutex;
@@ -84,10 +114,6 @@ private:
 };
 
 float getWorldgenVal(BlockCoord x, BlockCoord y, World &world, PerlinInstance instance);
-
-constexpr ChunkIndex World::getChunkIndexChunk(BlockCoord x, BlockCoord y, BlockCoord z) {
-	return ((ChunkIndex)((unsigned)x & chunkIndexMask) << (chunkIndexBits * 2)) | ((ChunkIndex)((unsigned)y & chunkIndexMask) << chunkIndexBits) | (ChunkIndex)((unsigned)z & chunkIndexMask);
-}
 
 template <bool alreadyHasMutex>
 void World::tryRegen(BlockCoord x, BlockCoord y, BlockCoord z) {
@@ -120,7 +146,7 @@ std::shared_ptr<Chunk> World::getChunkAtBlock(BlockCoord x, BlockCoord y, BlockC
 template <bool alreadyHasMutex>
 std::shared_ptr<Chunk> World::getChunk(BlockCoord x, BlockCoord y, BlockCoord z) {
 	if (z < 0) return nullptr;
-	auto ci = getChunkIndexChunk(x, y, z);
+	auto ci = ChunkIndex(x, y, z);
 	std::unique_lock<std::mutex> lck(chunkMutex, std::defer_lock);
 	if constexpr(!alreadyHasMutex)
 		lck.lock();

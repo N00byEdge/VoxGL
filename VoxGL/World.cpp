@@ -22,7 +22,7 @@ void World::draw(float deltaT, const glm::mat4 &perspective, Shader &shader) {
 	blockTextures->bind();
 	std::lock_guard<std::mutex> lck(chunkMutex);
 	for (auto &c : chunks) {
-		auto [x, y, z] = getChunkPos(c.first);
+		auto [x, y, z] = c.first;
 		c.second->draw(deltaT, { x, y, z });
 	}
 }
@@ -103,27 +103,8 @@ std::tuple<Block *, BlockSide, BlockCoord, BlockCoord, BlockCoord, float> World:
 	return { nullptr, BlockSide::Top, 0, 0, 0, .0f };
 }
 
-constexpr std::tuple<BlockCoord, BlockCoord, BlockCoord> World::getChunkPos(ChunkIndex ci) {
-	auto cc = (unsigned long long)ci;
-
-	auto xx = (BlockCoord)(cc >> chunkIndexBits * 2) & chunkIndexMask;
-	auto yy = (BlockCoord)(cc >> chunkIndexBits) & chunkIndexMask;
-	auto zz = (BlockCoord)cc & chunkIndexMask;
-
-	if (xx & (1 << (chunkIndexBits - 1)))
-		xx |= ~chunkIndexMask;
-
-	if (yy & (1 << (chunkIndexBits - 1)))
-		yy |= ~chunkIndexMask;
-
-	if (zz & (1 << (chunkIndexBits - 1)))
-		zz |= ~chunkIndexMask;
-
-	return std::make_tuple(xx, yy, zz);
-}
-
 constexpr ChunkIndex World::getChunkIndexBlock(BlockCoord x, BlockCoord y, BlockCoord z) {
-	return getChunkIndexChunk(Chunk::decomposeChunkFromBlock(x), Chunk::decomposeChunkFromBlock(y), Chunk::decomposeChunkFromBlock(z));
+	return ChunkIndex(Chunk::decomposeChunkFromBlock(x), Chunk::decomposeChunkFromBlock(y), Chunk::decomposeChunkFromBlock(z));
 }
 
 void World::worldgen() {
@@ -152,7 +133,7 @@ void World::worldgen() {
 					auto xd = .5f + x - position->x/chunkSize, yd = .5f + y - position->y / chunkSize, zd = .5f + z - position->z / chunkSize;
 					if (xd * xd + yd * yd + zd * zd > worldgenDist * worldgenDist) continue;
 					auto height = Chunk::blockHeight(Chunk::getBlerpWorldgenVal(x * chunkSize, y * chunkSize, this, PerlinInstance::Height));
-					auto ci = getChunkIndexChunk(x, y, z);
+					auto ci = ChunkIndex(x, y, z);
 					bool create;
 					{
 						std::lock_guard<std::mutex> lck(chunkMutex);
@@ -233,11 +214,4 @@ float getWorldgenVal(BlockCoord x, BlockCoord y, World &world, PerlinInstance in
 	(*cache)[comp] = val;
 
 	return val;
-}
-
-namespace {
-	// Make sure encoding is working properly
-	static_assert(std::get<0>(World::getChunkPos(World::getChunkIndexChunk(-4, -1, -4))) == -4);
-	static_assert(std::get<1>(World::getChunkPos(World::getChunkIndexChunk(-4, -1, -4))) == -1);
-	static_assert(std::get<2>(World::getChunkPos(World::getChunkIndexChunk(-4, -1, -4))) == -4);
 }
