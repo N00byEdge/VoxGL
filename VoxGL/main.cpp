@@ -1,7 +1,7 @@
 #include "Game.hpp"
 
-#include "GL/glew.h"
-
+// ReSharper disable CppInconsistentNaming
 int main() {
-	Game g;
+  // ReSharper restore CppInconsistentNaming
+  Game g;
 }

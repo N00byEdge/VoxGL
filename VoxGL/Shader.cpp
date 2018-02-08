@@ -1,7 +1,6 @@
 #include "Shader.hpp"
 
 #include <iostream>
-#include <fstream>
 #include <string>
 #include <memory>
 
@@ -11,79 +10,81 @@
 
 #include <GL/gl.h>
 
-template <bool isProgram>
-void checkShaderError(GLuint shader, GLuint flag, const std::string errorPrefix = "") {
-	GLint success = 0;
-	GLchar error[1024]{};
+template<bool IsProgram>
+void CheckShaderError(GLuint const shader, GLuint const flag, const std::string &errorPrefix = "") {
+  auto success = 0;
+  GLchar error[1024]{};
 
-	(isProgram ? glGetProgramiv : glGetShaderiv)(shader, flag, &success);
-	if(!success)
-		(isProgram ? glGetProgramInfoLog : glGetShaderInfoLog)(shader, sizeof(error), NULL, error), std::cerr << errorPrefix << error << std::endl;
+  (IsProgram ? glGetProgramiv : glGetShaderiv)(shader, flag, &success);
+  if(!success)
+    (IsProgram ? glGetProgramInfoLog : glGetShaderInfoLog)(shader, sizeof(error), nullptr, error), std::cerr << errorPrefix << error << std
+        ::endl;
 }
 
-GLuint makeShader(const std::string &shaderSource, GLenum shaderType) {
-	GLuint shader = glCreateShader(shaderType);
+GLuint MakeShader(const std::string &shaderSource, GLenum const shaderType) {
+  auto const shader = glCreateShader(shaderType);
 
-	auto fptr = std::make_unique<const char *>(shaderSource.c_str());
-	auto filesize = std::make_unique<GLint>((GLint)shaderSource.size());
+  auto fptr     = std::make_unique<const char *>(shaderSource.c_str());
+  auto filesize = std::make_unique<GLint>(static_cast<GLint>(shaderSource.size()));
 
-	glShaderSource(shader, 1, fptr.get(), filesize.get());
-	glCompileShader(shader);
+  glShaderSource(shader, 1, fptr.get(), filesize.get());
+  glCompileShader(shader);
 
-	checkShaderError<false>(shader, GL_COMPILE_STATUS, "Shader linking error: ");
+  CheckShaderError<false>(shader, GL_COMPILE_STATUS, "Shader linking error: ");
 
-	assert(glGetError() == GL_NO_ERROR);
+  assert(glGetError() == GL_NO_ERROR);
 
-	return shader;
+  return shader;
 }
 
-Shader::Shader(const std::string &vertexShader, const std::string &fragmentShader) : program(glCreateProgram()),
+Shader::Shader(const std::string &vertexShader, const std::string &fragmentShader) :
+  program(glCreateProgram()),
 
-shaders([&]() {
-	std::vector <GLuint> shaders;
-	shaders.push_back(makeShader(vertexShader, GL_VERTEX_SHADER));
-	shaders.push_back(makeShader(fragmentShader, GL_FRAGMENT_SHADER));
+  shaders([&]() {
+    std::vector<GLuint> shaders;
+    shaders.push_back(MakeShader(vertexShader, GL_VERTEX_SHADER));
+    shaders.push_back(MakeShader(fragmentShader, GL_FRAGMENT_SHADER));
 
-	for (const auto &s : shaders)
-		glAttachShader(program, s);
+    for(const auto &s: shaders)
+      glAttachShader(program, s);
 
-	glBindAttribLocation(program, 0, "position");
-	glBindAttribLocation(program, 1, "textCoord");
+    glBindAttribLocation(program, 0, "position");
+    glBindAttribLocation(program, 1, "textCoord");
 
-	glLinkProgram(program);
-	checkShaderError<true>(program, GL_LINK_STATUS, "Shader linking error: ");
+    glLinkProgram(program);
+    CheckShaderError<true>(program, GL_LINK_STATUS, "Shader linking error: ");
 
-	glValidateProgram(program);
-	checkShaderError<true>(program, GL_VALIDATE_STATUS, "Shader validation error: ");
+    glValidateProgram(program);
+    CheckShaderError<true>(program, GL_VALIDATE_STATUS, "Shader validation error: ");
 
-	return shaders;
-}()),
+    return shaders;
+  }()),
 
-uniforms([&]() {
-	std::array<GLuint, U_NUM> arr{};
-	arr[U_TRANSFORM] = glGetUniformLocation(program, "transform");
-	arr[U_BLOCKTRASLATION] = glGetUniformLocation(program, "blockTraslation");
-	return arr;
-}()) {
-	assert(glGetError() == GL_NO_ERROR);
+  uniforms([&]() {
+    std::array<GLuint, UNum> arr{};
+    arr[UTransform]       = glGetUniformLocation(program, "transform");
+    arr[UBlocktraslation] = glGetUniformLocation(program, "blockTraslation");
+    return arr;
+  }()) {
+  assert(glGetError() == GL_NO_ERROR);
 }
 
 Shader::~Shader() {
-	for (const auto &s : shaders) {
-		glDetachShader(program, s);
-		glDeleteShader(s);
-	}
-	glDeleteProgram(program);
+  for(const auto &s: shaders) {
+    glDetachShader(program, s);
+    glDeleteShader(s);
+  }
+  glDeleteProgram(program);
 }
 
-void Shader::bind() {
-	glUseProgram(program);
+void Shader::bind() const {
+  glUseProgram(program);
 }
 
-void Shader::update(const glm::mat4 &transform, const glm::mat4 &camera, const glm::vec3 &renderTranslation) {
-	glUseProgram(program);
-	glm::mat4 result = camera * transform;
-	
-	glUniformMatrix4fv(uniforms[U_TRANSFORM], 1, GL_FALSE, &result[0][0]);
-	glUniform3fv(uniforms[U_BLOCKTRASLATION], 1, &renderTranslation.x);
+void Shader::update(const glm::mat4 &transform, const glm::mat4 &camera, const glm::vec3 &renderTranslation) const {
+  glUseProgram(program);
+  auto result = camera * transform;
+
+  glUniformMatrix4fv(uniforms[UTransform], 1, GL_FALSE, &result[0][0]);
+  glUniform3fv(uniforms[UBlocktraslation], 1, &renderTranslation.x);
 }

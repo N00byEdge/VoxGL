@@ -1,66 +1,73 @@
 #include "Mesh.hpp"
 
-#include <iostream>
-#include <typeinfo>
-
 #include "GL/glew.h"
 
 #include "Game.hpp"
 
-#include "SFML/Graphics/Texture.hpp"
+Mesh::Mesh(std::vector<MeshPoint> const &vertices, std::vector<unsigned> const &indices): count(static_cast<unsigned int>(indices.size())) {
+  if(!count)
+    return;
 
-Mesh::Mesh(const std::vector <MeshPoint> &vertices, const std::vector<unsigned> &indices): count((unsigned int) indices.size()) {
-	if (!count)
-		return;
+  std::vector<MeshPoint::WorldPos> locVerts(vertices.size());
+  for(size_t i  = 0; i < vertices.size(); ++i)
+    locVerts[i] = vertices[i].loc;
+  std::vector<MeshPoint::TextPos> textVerts(vertices.size());
+  for(size_t i   = 0; i < vertices.size(); ++i)
+    textVerts[i] = vertices[i].textPoint;
 
-	std::vector <MeshPoint::WorldPos> locVerts(vertices.size());
-	for (size_t i = 0; i < vertices.size(); ++i) locVerts[i] = vertices[i].loc;
-	std::vector <MeshPoint::TextPos> textVerts(vertices.size());
-	for (size_t i = 0; i < vertices.size(); ++i) textVerts[i] = vertices[i].textPoint;
+  // @TODO: Make callable from any thread!
+  auto err = glGetError();
+  assert(glGetError() == GL_NO_ERROR);
 
-	// TODO: Make callable from any thread!
+  glGenVertexArrays(VbNum, &vertexArrayObject);
+  glBindVertexArray(vertexArrayObject);
+  glGenBuffers(VbNum, vertexArrayBuffers.get());
 
-	auto err = glGetError();
-	assert(glGetError() == GL_NO_ERROR);
+  assert(glGetError() == GL_NO_ERROR);
 
-	glGenVertexArrays(VB_NUM, &vertexArrayObject);
-	glBindVertexArray(vertexArrayObject);
-	glGenBuffers(VB_NUM, vertexArrayBuffers);
+  glBindBuffer(GL_ARRAY_BUFFER, vertexArrayBuffers[VbPosition]);
+  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(locVerts[0]), locVerts.data(), GL_STATIC_DRAW);
 
-	assert(glGetError() == GL_NO_ERROR);
+  glEnableVertexAttribArray(VbPosition);
+  glVertexAttribPointer(VbPosition, sizeof(locVerts[0]) / sizeof(locVerts[0].x), GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vertexArrayBuffers[VB_POSITION]);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(locVerts[0]), locVerts.data(), GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, vertexArrayBuffers[VbTextcoord]);
+  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(textVerts[0]), textVerts.data(), GL_STATIC_DRAW);
 
-	glEnableVertexAttribArray(VB_POSITION);
-	glVertexAttribPointer(VB_POSITION, sizeof(locVerts[0]) / sizeof(locVerts[0].x), GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(VbTextcoord);
+  glVertexAttribPointer(VbTextcoord, sizeof(textVerts[0]) / sizeof(textVerts[0].x), GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vertexArrayBuffers[VB_TEXTCOORD]);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(textVerts[0]), textVerts.data(), GL_STATIC_DRAW);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexArrayBuffers[VbIndices]);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]), indices.data(), GL_STATIC_DRAW);
 
-	glEnableVertexAttribArray(VB_TEXTCOORD);
-	glVertexAttribPointer(VB_TEXTCOORD, sizeof(textVerts[0]) / sizeof(textVerts[0].x), GL_FLOAT, GL_FALSE, 0, 0);
+  assert(glGetError() == GL_NO_ERROR);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexArrayBuffers[VB_INDICES]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]), indices.data(), GL_STATIC_DRAW);
+  glBindVertexArray(0);
+}
 
-	assert(glGetError() == GL_NO_ERROR);
+Mesh::Mesh(Mesh &&other) noexcept: count{other.count}, vertexArrayObject{other.vertexArrayObject},
+                                   vertexArrayBuffers{std::move(other.vertexArrayBuffers)} { }
 
-	glBindVertexArray(0);
+Mesh &Mesh::operator=(Mesh &&other) noexcept {
+  count              = other.count;
+  vertexArrayObject  = other.vertexArrayObject;
+  vertexArrayBuffers = std::move(vertexArrayBuffers);
+
+  return *this;
 }
 
 Mesh::~Mesh() {
-	if(count)
-		glDeleteVertexArrays(VB_NUM, &vertexArrayObject);
+  if(count)
+    glDeleteVertexArrays(VbNum, &vertexArrayObject);
 }
 
 void Mesh::draw() const {
-	if (!count)
-		return;
+  if(!count)
+    return;
 
-	glBindVertexArray(vertexArrayObject);
+  glBindVertexArray(vertexArrayObject);
 
-	glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, 0);
+  glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
 
-	glBindVertexArray(0);
+  glBindVertexArray(0);
 }

@@ -7,3 +7,11 @@ const std::string vsBasic = {
 const std::string fsBasic = {
 #include "shaderBasic.fs"
 };
+
+const std::string vs2D = {
+#include "shader2D.vs"
+};
+
+const std::string fs2D = {
+#include "shader2D.fs"
+};

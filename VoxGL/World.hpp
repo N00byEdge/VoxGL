@@ -2,13 +2,9 @@
 
 #include "glm/glm.hpp"
 
-#include "PerlinNoise.hpp"
 #include "Blocks.hpp"
-#include "Maths.hpp"
 
 #include <thread>
-#include <map>
-#include <set>
 #include <mutex>
 #include <atomic>
 
@@ -22,42 +18,41 @@ enum struct PerlinInstance : BlockCoord {
 	Humidity,
 };
 
-template <int precision>
+template <int Precision>
 struct WorldgenPrecision {
-	const static int num = 1 << precision;
-	const static int noiseArg = precision - 1;
+	static int const Num = 1 << Precision;
+	static int const NoiseArg = Precision - 1;
 };
 
-constexpr WorldgenPrecision<5> heightPrecision;
-constexpr WorldgenPrecision<3> humidityPrecision;
-constexpr WorldgenPrecision<3> temperaturePrecision;
+constexpr WorldgenPrecision<5> HeightPrecision;
+constexpr WorldgenPrecision<10> HumidityPrecision;
+constexpr WorldgenPrecision<10> TemperaturePrecision;
 
 constexpr std::pair<int, int> getPrecision(PerlinInstance pi) {
 	switch (pi) {
 	case PerlinInstance::Height:
-		return { heightPrecision.num, heightPrecision.noiseArg };
+		return { HeightPrecision.Num, HeightPrecision.NoiseArg };
 	case PerlinInstance::Humidity:
-		return { humidityPrecision.num, humidityPrecision.noiseArg };
+		return { HumidityPrecision.Num, HumidityPrecision.NoiseArg };
 	case PerlinInstance::Temperature:
-		return { temperaturePrecision.num, temperaturePrecision.noiseArg };
+		return { TemperaturePrecision.Num, TemperaturePrecision.NoiseArg };
 	}
-	assert(false);
-	return {0, 0};
+	throw "Waddafik";
 }
 
 union ChunkIndex {
 	constexpr ChunkIndex(BlockCoord x, BlockCoord y, BlockCoord z): x(x), y(y), z(z) { }
-	constexpr ChunkIndex(const ChunkIndex &other): repr(other.repr) { }
+	constexpr ChunkIndex(ChunkIndex const &other): repr(other.repr) { }
 
-	template <size_t ind>
+	template <size_t Ind>
 	constexpr decltype(auto) get() const {
-		     if constexpr(ind == 0) return (x);
-		else if constexpr(ind == 1) return (y);
-		else if constexpr(ind == 2) return (z);
+		     if constexpr(Ind == 0) return (x);
+		else if constexpr(Ind == 1) return (y);
+		else if constexpr(Ind == 2) return (z);
 	}
 
-	constexpr bool operator==(const ChunkIndex &other) const { return repr == other.repr; }
-	constexpr bool operator< (const ChunkIndex &other) const { return repr <  other.repr; }
+	constexpr bool operator==(ChunkIndex const &other) const { return repr == other.repr; }
+	constexpr bool operator< (ChunkIndex const &other) const { return repr <  other.repr; }
 
 	struct {
 		long long x : 22;
@@ -68,29 +63,27 @@ union ChunkIndex {
 	long long repr;
 };
 
-namespace std {
-	template <> struct tuple_size<ChunkIndex> : public integral_constant<size_t, 3> { };
-
-	template<size_t ind> struct tuple_element<ind, ChunkIndex> {
-		using type = decltype(std::declval<ChunkIndex>().get<ind>());
-	};
-
-	template <> struct hash<ChunkIndex> {
-		size_t operator()(const ChunkIndex &ci) const { return std::hash<long long>{}(ci.repr); }
-	};
-}
-
 static_assert(sizeof(ChunkIndex) <= 8, "ChunkIndex too large");
+
+template <> struct std::tuple_size<ChunkIndex> : public integral_constant<size_t, 3> { };
+
+template<size_t Ind> struct std::tuple_element<Ind, ChunkIndex> {
+	using type = decltype(std::declval<ChunkIndex>().get<Ind>());
+};
+
+template <> struct std::hash<ChunkIndex> {
+	size_t operator()(ChunkIndex const &ci) const { return std::hash<long long>{}(ci.repr); }
+};
 
 struct World {
 	World(glm::vec3 *const position, long long seed);
 	~World();
 
-	void draw(float deltaT, const glm::mat4 &perspective, Shader &);
-	template <bool alreadyHasMutex> void tryRegen(BlockCoord x, BlockCoord y, BlockCoord z);
-	template <bool alreadyHasMutex> Block *blockAt(BlockCoord x, BlockCoord y, BlockCoord z);
-	template <bool alreadyHasMutex> std::shared_ptr<Chunk> getChunkAtBlock(BlockCoord x, BlockCoord y, BlockCoord z);
-	template <bool alreadyHasMutex> std::shared_ptr<Chunk> getChunk(BlockCoord x, BlockCoord y, BlockCoord z);
+	void draw(float deltaT, glm::mat4 const &perspective, Shader &);
+	template <bool AlreadyHasMutex> void tryRegen(BlockCoord x, BlockCoord y, BlockCoord z);
+	template <bool AlreadyHasMutex> Block *blockAt(BlockCoord x, BlockCoord y, BlockCoord z);
+	template <bool AlreadyHasMutex> std::shared_ptr<Chunk> getChunkAtBlock(BlockCoord x, BlockCoord y, BlockCoord z);
+	template <bool AlreadyHasMutex> std::shared_ptr<Chunk> getChunk(BlockCoord x, BlockCoord y, BlockCoord z);
 	std::tuple<Block *, BlockSide, BlockCoord, BlockCoord, BlockCoord, float> raycast(glm::vec3 from, glm::vec3 dir, float maxDist);
 	static constexpr ChunkIndex getChunkIndexBlock(BlockCoord x, BlockCoord y, BlockCoord z);
 
@@ -113,16 +106,18 @@ private:
 	std::thread worldgenThread;
 };
 
+#include "Chunk.hpp"
+
 float getWorldgenVal(BlockCoord x, BlockCoord y, World &world, PerlinInstance instance);
 
-template <bool alreadyHasMutex>
+template <bool AlreadyHasMutex>
 void World::tryRegen(BlockCoord x, BlockCoord y, BlockCoord z) {
-	auto chunk = getChunk<alreadyHasMutex>(x, y, z);
+	auto chunk = getChunk<AlreadyHasMutex>(x, y, z);
 	if (chunk)
-		chunk->regenerateChunkMesh<alreadyHasMutex>(x, y, z, this);
+		chunk->regenerateChunkMesh<AlreadyHasMutex>(x, y, z, this);
 }
 
-template <bool alreadyHasMutex>
+template <bool AlreadyHasMutex>
 Block *World::blockAt(BlockCoord x, BlockCoord y, BlockCoord z) {
 	if (z < 0) return nullptr;
 
@@ -130,28 +125,28 @@ Block *World::blockAt(BlockCoord x, BlockCoord y, BlockCoord z) {
 	auto yy = Chunk::decomposeBlockPos(y);
 	auto zz = Chunk::decomposeBlockPos(z);
 
-	auto c = getChunk<alreadyHasMutex>(xx.second, yy.second, zz.second);
+	auto c = getChunk<AlreadyHasMutex>(xx.second, yy.second, zz.second);
 	if (c)
 		return c->blockAt(xx.first, yy.first, zz.first);
 	else
 		return nullptr;
 }
 
-template <bool alreadyHasMutex>
+template <bool AlreadyHasMutex>
 std::shared_ptr<Chunk> World::getChunkAtBlock(BlockCoord x, BlockCoord y, BlockCoord z) {
 	if (z < 0) return nullptr;
-	return getChunk<alreadyHasMutex>(Chunk::decomposeChunkFromBlock(x), Chunk::decomposeChunkFromBlock(y), Chunk::decomposeChunkFromBlock(z));
+	return getChunk<AlreadyHasMutex>(Chunk::decomposeChunkFromBlock(x), Chunk::decomposeChunkFromBlock(y), Chunk::decomposeChunkFromBlock(z));
 }
 
-template <bool alreadyHasMutex>
+template <bool AlreadyHasMutex>
 std::shared_ptr<Chunk> World::getChunk(BlockCoord x, BlockCoord y, BlockCoord z) {
 	if (z < 0) return nullptr;
-	auto ci = ChunkIndex(x, y, z);
+	auto const ci = ChunkIndex(x, y, z);
 	std::unique_lock<std::mutex> lck(chunkMutex, std::defer_lock);
-	if constexpr(!alreadyHasMutex)
+	if constexpr(!AlreadyHasMutex)
 		lck.lock();
 
-	auto chunk = chunks.find(ci);
+	auto const chunk = chunks.find(ci);
 	if (chunk == chunks.end()) return nullptr;
 	else return chunk->second;
 }

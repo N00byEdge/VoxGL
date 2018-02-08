@@ -7,34 +7,36 @@ struct BlockTexture;
 using BlockHandle = int;
 using BlockCoord = int;
 
-#include "glm/glm.hpp"
+extern BlockHandle InvalidHandle;
+extern BlockHandle DirtHandle;
+extern BlockHandle GrassHandle;
+extern BlockHandle StoneHandle;
+extern BlockHandle SandHandle;
 
 #include "BlockFaceMesh.hpp"
-#include "Shader.hpp"
 #include "Mesh.hpp"
 
 enum struct BlockType {
-	Dirt,
-	Grass,
-	Stone,
-
-	Num_blocks
+  Dirt,
+  Grass,
+  Stone,
+  Sand,
 };
 
 struct Block {
-	virtual bool isSolid() { return false; }
-	virtual void remove(BlockCoord x, BlockCoord y, BlockCoord z, World &w);
-	virtual void destroy(BlockCoord x, BlockCoord y, BlockCoord z, World &w);
-	virtual MeshData getMesh(int x, int y, int z, BlockSide blockSides) = 0;
-	virtual void onBreak(Game &, BlockCoord x, BlockCoord y, BlockCoord z) = 0;
-	virtual ~Block() { };
+  virtual bool isSolid() { return false; }
+  virtual void remove(BlockCoord x, BlockCoord y, BlockCoord z, World &w);
+  virtual void destroy(BlockCoord x, BlockCoord y, BlockCoord z, World &w);
+  virtual MeshData getMesh(int x, int y, int z, BlockSide blockSides) = 0;
+  virtual void onBreak(Game &, BlockCoord x, BlockCoord y, BlockCoord z) = 0;
+  virtual ~Block() = default;
 };
 
-template <BlockType type>
-struct BasicBlock : public Block {
-	BasicBlock(BlockCoord x, BlockCoord y, BlockCoord z, World *w);
-	virtual ~BasicBlock() override;
-	virtual bool isSolid() override;
-	virtual MeshData getMesh(BlockCoord x, BlockCoord y, BlockCoord z, BlockSide blockSides) override;
-	virtual void onBreak(Game &, BlockCoord x, BlockCoord y, BlockCoord z) override;
+template<BlockType Type>
+struct BasicBlock: public Block {
+  BasicBlock();
+  ~BasicBlock() override;
+  bool isSolid() override;
+  MeshData getMesh(BlockCoord x, BlockCoord y, BlockCoord z, BlockSide blockSides) override;
+  void onBreak(Game &, BlockCoord x, BlockCoord y, BlockCoord z) override;
 };

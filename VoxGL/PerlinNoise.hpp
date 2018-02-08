@@ -3,22 +3,21 @@
 #include "Block.hpp"
 
 #include <random>
-#include <array>
 
-constexpr float range = .5f;
+template<int Resolution>
+float PerlinNoise(BlockCoord x, BlockCoord y, BlockCoord seed, int instance) {
+  constexpr auto range = .5f;
+  std::uniform_real_distribution<float> const dist(-range, range);
+  auto result = range;
+  x += 1 << 30, y += 1 << 30;
 
-template<int resolution>
-inline float perlinNoise(BlockCoord x, BlockCoord y, BlockCoord seed, int instance) {
-	float result = range;
-	x += 1 << 30, y += 1 << 30;
+  BlockCoord coordMask = ~((~0) ^ 1 << (sizeof(BlockCoord) * 8 - 1));
 
-	BlockCoord coordMask = ~((~0) ^ 1 << (sizeof(BlockCoord) * 8 - 1));
+  for(int octave = sizeof(BlockCoord) * 8 - Resolution; --octave; coordMask >>= 1) {
+    auto eSeed{static_cast<unsigned long long>(x & coordMask) << 32 ^ (y & coordMask) ^ (seed) ^ static_cast<int>(instance) ^ (octave)};
+    std::ranlux48 mt(eSeed);
+    result += dist(mt) / (1 << octave);
+  }
 
-	for (int octave = sizeof(BlockCoord) * 8 - resolution; --octave; coordMask >>= 1) {
-		auto mtseed{ (unsigned long long)(x & coordMask) << 32 ^ (y & coordMask) ^ (seed) ^ ((int)instance) ^ (octave) };
-		std::mt19937_64 mt(mtseed);
-		result += std::uniform_real_distribution<float>(-range, range)(mt) / (1 << octave);
-	}
-
-	return result;
+  return result;
 }

@@ -25,9 +25,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="GameState.hpp">
       <Filter>States</Filter>
     </ClInclude>
@@ -144,12 +141,6 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\shaderBasic.vs">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shader2D.fs">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shader2D.vs">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

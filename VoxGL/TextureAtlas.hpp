@@ -4,15 +4,15 @@
 
 #include <string>
 
-constexpr int textureLength = 16; // 16 * 16 texture atlases
+constexpr int TextureLength = 16; // 16 * 16 texture atlases
 
 struct TextureAtlas {
-	using TextureID = size_t;
+  using TextureId = size_t;
 
-	TextureAtlas(const std::string &filename);
-	~TextureAtlas();
+  explicit TextureAtlas(const std::string &filename);
+  ~TextureAtlas();
 
-	void bind() const;
+  void bind() const;
 private:
-	GLuint textureHandle;
+  GLuint textureHandle;
 };

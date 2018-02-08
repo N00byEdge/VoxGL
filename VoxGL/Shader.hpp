@@ -11,19 +11,19 @@
 struct Camera;
 
 struct Shader {
-	Shader(const std::string &vertexShader, const std::string &fragmentShader);
-	~Shader();
-	void bind();
-	void update(const glm::mat4 &transform, const glm::mat4 &camera, const glm::vec3 &renderTranslation = {.0f, .0f, .0f});
+  Shader(const std::string &vertexShader, const std::string &fragmentShader);
+  ~Shader();
+  void bind() const;
+  void update(const glm::mat4 &transform, const glm::mat4 &camera, const glm::vec3 &renderTranslation = {.0f, .0f, .0f}) const;
 private:
-	enum {
-		U_TRANSFORM,
-		U_BLOCKTRASLATION,
+  enum {
+    UTransform,
+    UBlocktraslation,
 
-		U_NUM
-	};
+    UNum
+  };
 
-	const GLuint program;
-	const std::vector <GLuint> shaders;
-	const std::array <GLuint, U_NUM> uniforms;
+  const GLuint program;
+  const std::vector<GLuint> shaders;
+  const std::array<GLuint, UNum> uniforms;
 };

@@ -4,25 +4,25 @@ struct Block;
 struct BlockTexture;
 struct World;
 
-#include <vector>
-#include <string>
-#include <memory>
-#include <unordered_map>
 #include <functional>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "Block.hpp"
 
 using BlockFactory = std::function<std::unique_ptr<Block>(BlockCoord, BlockCoord, BlockCoord, World *)>;
-const extern std::vector <BlockCoord> vx;
-const extern std::vector <std::tuple<BlockCoord, BlockCoord>> vdxy;
-const extern std::vector <std::tuple<BlockCoord, BlockCoord, BlockCoord>> vdxyz;
+extern std::vector<BlockCoord> const  Vx;
+extern std::vector<std::tuple<BlockCoord, BlockCoord>> const  Vdxy;
+extern std::vector<std::tuple<BlockCoord, BlockCoord, BlockCoord>> const Vdxyz;
 
-extern std::unordered_map<std::string, BlockHandle> stringToHandle;
-extern std::vector <BlockFactory> blockFactoryHandles;
-extern std::vector <std::string> handleToString;
+extern std::unordered_map<std::string, BlockHandle> StringToHandle;
+extern std::vector<BlockFactory> BlockFactoryHandles;
+extern std::vector<std::string> HandleToString;
 
-BlockHandle registerBlockFactory(const std::string &name, BlockFactory factory);
+BlockHandle RegisterBlockFactory(std::string const &&name, BlockFactory factory);
 
-std::unique_ptr<Block> createBlock(int factoryHandle, int x, int y, int z, World *);
-const std::string &getBlockName(int blockHandle);
-BlockHandle getBlockHandle(std::string blockName);
+std::unique_ptr<Block> CreateBlock(int factoryHandle, int x, int y, int z, World *);
+std::string const &GetBlockName(int blockHandle);
+BlockHandle GetBlockHandle(std::string const &blockName);

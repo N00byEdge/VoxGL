@@ -4,33 +4,36 @@
 #include "glm/glm.hpp"
 
 #include <vector>
+#include <memory>
 
 struct MeshPoint {
-	using WorldPos = glm::vec3;
-	using TextPos = glm::vec2;
-	WorldPos loc;
-	TextPos textPoint;
+  using WorldPos = glm::vec3;
+  using TextPos = glm::vec2;
+  WorldPos loc;
+  TextPos textPoint;
 };
 
 struct MeshData {
-	std::vector <MeshPoint> vertices;
-	std::vector <unsigned> indices;
+  std::vector<MeshPoint> vertices;
+  std::vector<unsigned> indices;
 };
 
 struct Mesh {
-	Mesh(const std::vector <MeshPoint> &vertices, const std::vector <unsigned> &indices);
-	~Mesh();
-	void draw() const;
+  Mesh(std::vector<MeshPoint> const &vertices, std::vector<unsigned> const &indices);
+  Mesh(Mesh &&other) noexcept;
+  Mesh &operator=(Mesh &&other) noexcept;
+  ~Mesh();
+  void draw() const;
 private:
-	enum {
-		VB_POSITION,
-		VB_TEXTCOORD,
-		VB_INDICES,
+  enum {
+    VbPosition,
+    VbTextcoord,
+    VbIndices,
 
-		VB_NUM
-	};
-	
-	const unsigned int count;
-	GLuint vertexArrayObject;
-	GLuint vertexArrayBuffers[VB_NUM];
+    VbNum
+  };
+
+  unsigned int count;
+  GLuint vertexArrayObject;
+  std::unique_ptr<GLuint[]> vertexArrayBuffers = std::make_unique<GLuint[]>(VbNum);
 };

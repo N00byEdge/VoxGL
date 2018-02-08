@@ -132,9 +132,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="Block.hpp" />
     <ClInclude Include="BlockFaceMesh.hpp" />
     <ClInclude Include="Blocks.hpp" />
@@ -180,8 +177,6 @@
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shader2D.fs" />
-    <None Include="shader2D.vs" />
     <None Include="shaders\shaderBasic.fs" />
     <None Include="shaders\shaderBasic.vs" />
   </ItemGroup>

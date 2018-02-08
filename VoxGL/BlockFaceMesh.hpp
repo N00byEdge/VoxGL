@@ -4,6 +4,7 @@
 #include "Mesh.hpp"
 
 enum struct BlockSide {
+	None,
 	Top,
 	Bottom,
 	Front,
@@ -12,4 +13,4 @@ enum struct BlockSide {
 	Right
 };
 
-MeshData basicBlockFaceMesh(glm::vec3 blockPosition, int textureID, BlockSide side);
+MeshData BasicBlockFaceMesh(glm::vec3 blockPosition, int textureID, BlockSide side);

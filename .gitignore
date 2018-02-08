@@ -79,11 +79,18 @@ $RECYCLE.BIN/
 *.lnk
 
 .vs*
+
+# Compiler output
 Debug*
 x64*
 VoxGL/x64*
 VoxGL/Release*
+
+# File which should be linked through git
 VoxGL/stb_image.h
+
+# Other project files
 VoxGL/GIMP/*
 VoxGL/wd/*
 VoxGL/VoxGL.vcxproj.user
+*.DotSettings
