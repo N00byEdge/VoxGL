@@ -41,7 +41,7 @@ Game::Game() :
 
                settings.depthBits         = 24;
                settings.stencilBits       = 8;
-               settings.sRgbCapable       = false;
+               //settings.sRgbCapable       = false;
                settings.antialiasingLevel = antialiasingLevel();
 
                return settings;

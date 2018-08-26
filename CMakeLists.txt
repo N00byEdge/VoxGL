@@ -12,7 +12,7 @@ if(APPLE)
     set(SFML_LIB_PATH /SFML/lib/)
 
 elseif(UNIX)
-
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
     set(SFML_INCLUDE_PATH /usr/local/include/)
     set(SFML_LIB_PATH /usr/local/lib/)
 
@@ -38,7 +38,7 @@ if (APPLE)
     target_link_libraries(VoxGL sfml-graphics sfml-window sfml-network sfml-system)
 elseif (UNIX)
     # Linux
-    target_link_libraries(VoxGL sfml-graphics sfml-window sfml-network sfml-system)
+    target_link_libraries(VoxGL sfml-graphics sfml-window sfml-network sfml-system GL GLU GLEW glut)
 else (APPLE)
     # Windows
     target_link_libraries(VoxGL sfml-graphics-s sfml-window-s sfml-network-s sfml-system-s opengl32 winmm gdi32 freetype jpeg openal32 flac vorbisenc vorbisfile vorbis ogg)

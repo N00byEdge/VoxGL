@@ -7,7 +7,7 @@
 #include "SFML/Window.hpp"
 #include "SFML/OpenGL.hpp"
 
-#include <gl/GL.h>
+#include <GL/gl.h>
 
 #include "Game.hpp"
 

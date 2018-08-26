@@ -14,9 +14,7 @@ constexpr BlockCoord ChunkLocMask   = ~ChunkBlockMask;
 struct World;
 enum struct PerlinInstance;
 
-using Lookup = std::unordered_map<long long, float>;
-
-auto const static ForEachBlock = [&](auto callable) {
+auto const static ForEachBlock = [](auto callable) {
   for(BlockCoord x             = 0; x < ChunkSize; ++x)
     for(BlockCoord y           = 0; y < ChunkSize; ++y)
       for(BlockCoord z         = 0; z < ChunkSize; ++z)

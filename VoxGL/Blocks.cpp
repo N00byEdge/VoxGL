@@ -1,8 +1,8 @@
 #include "Blocks.hpp"
 
-static std::vector<BlockCoord> const Vx{{1}, {-1}};
-static std::vector<std::tuple<BlockCoord, BlockCoord>> const Vdxy{{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-static std::vector<std::tuple<BlockCoord, BlockCoord, BlockCoord>> const Vdxyz{
+std::vector<BlockCoord> const Vx{{1}, {-1}};
+std::vector<std::tuple<BlockCoord, BlockCoord>> const Vdxy{{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+std::vector<std::tuple<BlockCoord, BlockCoord, BlockCoord>> const Vdxyz{
   {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}
 };
 

@@ -1,7 +1,7 @@
 #include "Mesh.hpp"
 
 #include "GL/glew.h"
-
+#include "cstring"
 #include "Game.hpp"
 
 Mesh::Mesh(std::vector<MeshPoint> const &vertices, std::vector<unsigned> const &indices) :
@@ -48,13 +48,13 @@ Mesh::Mesh(std::vector<MeshPoint> const &vertices, std::vector<unsigned> const &
 
 Mesh::Mesh(Mesh &&other) noexcept: count{other.count}, vertexArrayObject{other.vertexArrayObject},
                                    vertexArrayBuffers{} {
-  memcpy(vertexArrayBuffers, other.vertexArrayBuffers, VbNum * sizeof(GLuint));
+  std::memcpy(vertexArrayBuffers, other.vertexArrayBuffers, VbNum * sizeof(GLuint));
 }
 
 Mesh &Mesh::operator=(Mesh &&other) noexcept {
   count             = other.count;
   vertexArrayObject = other.vertexArrayObject;
-  memcpy(vertexArrayBuffers, other.vertexArrayBuffers, VbNum * sizeof(GLuint));
+  std::memcpy(vertexArrayBuffers, other.vertexArrayBuffers, VbNum * sizeof(GLuint));
 
   return *this;
 }

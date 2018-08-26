@@ -4,6 +4,8 @@
 #include <memory>
 #include <string>
 #include <map>
+#include <vector>
+#include <iostream>
 
 #define ADDOPT(var) addOption(#var, var)
 

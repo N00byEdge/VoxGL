@@ -7,7 +7,7 @@
 template<int Resolution>
 float PerlinNoise(BlockCoord x, BlockCoord y, BlockCoord seed, int instance) {
   constexpr auto range = .5f;
-  std::uniform_real_distribution<float> const dist(-range, range);
+  std::uniform_real_distribution<float> dist(-range, range);
   auto result = range;
   x += 1 << 30, y += 1 << 30;
 
