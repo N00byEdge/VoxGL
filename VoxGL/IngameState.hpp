@@ -10,7 +10,7 @@
 
 struct IngameState: public GameState {
   IngameState(Game *, sf::Window &);
-  ~IngameState() override { };
+  ~IngameState() override;;
   FrameRet frame(Game *, sf::Window &, float timeDelta) override;
   void handleEvent(Game *, sf::Window &, sf::Event &) override;
   glm::vec3 position{0, 0, Chunk::blockHeight(1.f)};
@@ -22,5 +22,5 @@ struct IngameState: public GameState {
   float pressure(float h) const;
 
   //Initialize the world last.
-  World w;
+  std::unique_ptr<World> w;
 };

@@ -58,7 +58,7 @@
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)shaders;G:\API\SFML\2.4.2\include;G:\API\GLM\0.9.9-a2;G:\API\Glew\2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <EnableModules>true</EnableModules>
+      <EnableModules>false</EnableModules>
       <OpenMPSupport>true</OpenMPSupport>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -96,7 +96,7 @@
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)shaders;G:\API\SFML\2.4.2\include;G:\API\GLM\0.9.9-a2;G:\API\Glew\2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <EnableModules>true</EnableModules>
+      <EnableModules>false</EnableModules>
       <OpenMPSupport>true</OpenMPSupport>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>

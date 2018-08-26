@@ -4,7 +4,8 @@
 
 #include "Game.hpp"
 
-Mesh::Mesh(std::vector<MeshPoint> const &vertices, std::vector<unsigned> const &indices): count(static_cast<unsigned int>(indices.size())) {
+Mesh::Mesh(std::vector<MeshPoint> const &vertices, std::vector<unsigned> const &indices) :
+  count(static_cast<unsigned int>(indices.size())), vertexArrayObject{}, vertexArrayBuffers{} {
   if(!count)
     return;
 
@@ -21,7 +22,7 @@ Mesh::Mesh(std::vector<MeshPoint> const &vertices, std::vector<unsigned> const &
 
   glGenVertexArrays(VbNum, &vertexArrayObject);
   glBindVertexArray(vertexArrayObject);
-  glGenBuffers(VbNum, vertexArrayBuffers.get());
+  glGenBuffers(VbNum, vertexArrayBuffers);
 
   assert(glGetError() == GL_NO_ERROR);
 
@@ -46,12 +47,14 @@ Mesh::Mesh(std::vector<MeshPoint> const &vertices, std::vector<unsigned> const &
 }
 
 Mesh::Mesh(Mesh &&other) noexcept: count{other.count}, vertexArrayObject{other.vertexArrayObject},
-                                   vertexArrayBuffers{std::move(other.vertexArrayBuffers)} { }
+                                   vertexArrayBuffers{} {
+  memcpy(vertexArrayBuffers, other.vertexArrayBuffers, VbNum * sizeof(GLuint));
+}
 
 Mesh &Mesh::operator=(Mesh &&other) noexcept {
-  count              = other.count;
-  vertexArrayObject  = other.vertexArrayObject;
-  vertexArrayBuffers = std::move(vertexArrayBuffers);
+  count             = other.count;
+  vertexArrayObject = other.vertexArrayObject;
+  memcpy(vertexArrayBuffers, other.vertexArrayBuffers, VbNum * sizeof(GLuint));
 
   return *this;
 }

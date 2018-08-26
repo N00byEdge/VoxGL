@@ -17,6 +17,6 @@ void LoadTextures(std::string const texturePath) {
 }
 
 void UnloadTextures() {
-  BlockTextures.release();
-  ItemTextures.release();
+  BlockTextures.reset();
+  ItemTextures.reset();
 }

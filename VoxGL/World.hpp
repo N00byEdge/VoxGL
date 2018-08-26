@@ -25,8 +25,8 @@ struct WorldgenPrecision {
 };
 
 constexpr WorldgenPrecision<5> HeightPrecision;
-constexpr WorldgenPrecision<10> HumidityPrecision;
-constexpr WorldgenPrecision<10> TemperaturePrecision;
+constexpr WorldgenPrecision<5> HumidityPrecision;
+constexpr WorldgenPrecision<5> TemperaturePrecision;
 
 constexpr std::pair<int, int> getPrecision(PerlinInstance pi) {
 	switch (pi) {
@@ -45,10 +45,10 @@ union ChunkIndex {
 	constexpr ChunkIndex(ChunkIndex const &other): repr(other.repr) { }
 
 	template <size_t Ind>
-	constexpr decltype(auto) get() const {
-		     if constexpr(Ind == 0) return (x);
-		else if constexpr(Ind == 1) return (y);
-		else if constexpr(Ind == 2) return (z);
+	constexpr auto &get() const {
+		     if constexpr(Ind == 0) return x;
+		else if constexpr(Ind == 1) return y;
+		else if constexpr(Ind == 2) return z;
 	}
 
 	constexpr bool operator==(ChunkIndex const &other) const { return repr == other.repr; }
@@ -65,6 +65,19 @@ union ChunkIndex {
 
 static_assert(sizeof(ChunkIndex) <= 8, "ChunkIndex too large");
 
+union PlayerPos {
+  struct {
+    long long n : 26;
+    unsigned long long sub : 14;
+  };
+
+  long long repr : 40;
+};
+
+struct PosVec {
+  PlayerPos x, y, z;
+};
+
 template <> struct std::tuple_size<ChunkIndex> : public integral_constant<size_t, 3> { };
 
 template<size_t Ind> struct std::tuple_element<Ind, ChunkIndex> {
@@ -75,8 +88,11 @@ template <> struct std::hash<ChunkIndex> {
 	size_t operator()(ChunkIndex const &ci) const { return std::hash<long long>{}(ci.repr); }
 };
 
+inline void unload(std::unique_ptr<World> world) { }
+
 struct World {
 	World(glm::vec3 *const position, long long seed);
+  World(World &&other) noexcept;
 	~World();
 
 	void draw(float deltaT, glm::mat4 const &perspective, Shader &);

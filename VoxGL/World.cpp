@@ -14,6 +14,10 @@ constexpr float WorldgenDist = isDebugging ? 10.f : 15.f;
 World::World(glm::vec3 *const position, long long const seed) : position(position), seed(static_cast<decltype(this->seed)>(seed)),
                                                                 worldgenThread(&World::worldgen, this) { }
 
+World::World(World &&other) noexcept : position{ other.position }, seed{0}, worldgenThread{std::move(other.worldgenThread)} {
+  chunks = std::move(other.chunks);
+}
+
 World::~World() {
   generating = false;
   worldgenThread.join();
@@ -121,14 +125,14 @@ constexpr ChunkIndex World::getChunkIndexBlock(BlockCoord x, BlockCoord y, Block
 }
 
 void World::worldgen() {
-  auto const static makeChunk = [&](BlockCoord cx, BlockCoord cy, BlockCoord cz, ChunkIndex ci) {
-    auto c                    = std::make_shared<Chunk>(cx, cy, cz, this);
+  auto const makeChunk = [&](BlockCoord cx, BlockCoord cy, BlockCoord cz, ChunkIndex ci) {
+    auto c = std::make_shared<Chunk>(cx, cy, cz, this);
     {
       std::lock_guard<std::mutex> lck(chunkMutex);
       chunks[ci] = c;
 
       // Hunt for adjacent chunks!
-      for(auto [dx, dy, dz]: Vdxyz) {
+      for(auto const &[dx, dy, dz]: Vdxyz) {
         if(auto adjC = getChunk<true>(cx + dx, cy + dy, cz + dz)) {
           adjC->onAdjacentChunkLoad(-dx, -dy, -dz, std::weak_ptr<Chunk>{c});
           c->onAdjacentChunkLoad(dx, dy, dz, adjC);
@@ -144,7 +148,7 @@ void World::worldgen() {
         x <= static_cast<BlockCoord>(position->x / ChunkSize + WorldgenDist) && generating; ++x) {
       for(auto y = static_cast<BlockCoord>(position->y / ChunkSize - WorldgenDist - 1);
           y <= static_cast<BlockCoord>(position->y / ChunkSize + WorldgenDist) && generating; ++y) {
-        for(int z = std::max(0, static_cast<BlockCoord>(position->z / ChunkSize - WorldgenDist - 1));
+        for(auto z = std::max(0, static_cast<BlockCoord>(position->z / ChunkSize - WorldgenDist - 1));
             z <= static_cast<BlockCoord>(position->z / ChunkSize + WorldgenDist) && generating; ++z) {
           auto const xd = .5f + x - position->x / ChunkSize;
           auto const yd = .5f + y - position->y / ChunkSize;

@@ -95,7 +95,7 @@ void Block::remove(BlockCoord x, BlockCoord y, BlockCoord z, World &w) {
   auto [by, cy] = Chunk::decomposeBlockPos(y);
   auto [bz, cz] = Chunk::decomposeBlockPos(z);
   auto c        = w.getChunk<true>(cx, cy, cz);
-  c->blocks[Chunk::blockPos(bx, by, bz)].release();
+  c->blocks[Chunk::blockPos(bx, by, bz)].reset();
 }
 
 void Block::destroy(BlockCoord x, BlockCoord y, BlockCoord z, World &w) {

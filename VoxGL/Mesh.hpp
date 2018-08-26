@@ -4,7 +4,6 @@
 #include "glm/glm.hpp"
 
 #include <vector>
-#include <memory>
 
 struct MeshPoint {
   using WorldPos = glm::vec3;
@@ -20,7 +19,9 @@ struct MeshData {
 
 struct Mesh {
   Mesh(std::vector<MeshPoint> const &vertices, std::vector<unsigned> const &indices);
+  Mesh(Mesh &) = delete;
   Mesh(Mesh &&other) noexcept;
+  Mesh &operator=(Mesh &) = delete;
   Mesh &operator=(Mesh &&other) noexcept;
   ~Mesh();
   void draw() const;
@@ -35,5 +36,5 @@ private:
 
   unsigned int count;
   GLuint vertexArrayObject;
-  std::unique_ptr<GLuint[]> vertexArrayBuffers = std::make_unique<GLuint[]>(VbNum);
+  GLuint vertexArrayBuffers[3];
 };

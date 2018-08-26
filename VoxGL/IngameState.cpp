@@ -13,9 +13,14 @@
 #include <cmath>
 #include <iostream>
 
-IngameState::IngameState(Game *g, sf::Window &window): GameState(g), w(&position, 0) {
+IngameState::IngameState(Game *g, sf::Window &window): GameState(g), w(std::make_unique<World>(&position, 0)) {
   if(!releaseCursor)
     sf::Mouse::setPosition({static_cast<int>(window.getSize().x) / 2, static_cast<int>(window.getSize().y) / 2}, window);
+}
+
+IngameState::~IngameState() {
+  std::thread unloadThread = std::thread(unload, std::move(w));
+  unloadThread.detach();
 }
 
 FrameRet IngameState::frame(Game *g, sf::Window &window, float const timeDelta) {
@@ -50,7 +55,7 @@ FrameRet IngameState::frame(Game *g, sf::Window &window, float const timeDelta) 
       acceleration.z -= 1.f;
   }
 
-  velocity += acceleration * timeDelta * 50.0f;
+  velocity += acceleration * timeDelta * 250.0f;
 
   position += velocity * timeDelta;
 
@@ -65,9 +70,9 @@ FrameRet IngameState::frame(Game *g, sf::Window &window, float const timeDelta) 
 
   g->shaderBasic.update(Transform(), cam);
   g->shaderBasic.bind();
-  w.draw(timeDelta, cam, g->shaderBasic);
+  w->draw(timeDelta, cam, g->shaderBasic);
 
-  if([[maybe_unused]] auto [block, side, x, y, z, dist] = w.raycast(position, Forward(lookX, lookZ), 8.0f); block) {
+  if([[maybe_unused]] auto [block, side, x, y, z, dist] = w->raycast(position, Forward(lookX, lookZ), 8.0f); block) {
     glColor3f(0, 0, 0);
     glBegin(GL_LINES);
     glVertex3f(x - 0.001f, y - 0.001f, z - 0.001f);
@@ -164,11 +169,11 @@ void IngameState::handleEvent(Game *g, sf::Window &window, sf::Event &event) {
     break;
   case sf::Event::MouseButtonPressed:
     if(!releaseCursor) {
-      if([[maybe_unused]] auto [block, side, x, y, z, dist] = w.raycast(position, Forward(lookX, lookZ), 8.0f); block) {
-        auto const xx                                      = Chunk::decomposeBlockPos(x);
-        auto const yy                                      = Chunk::decomposeBlockPos(y);
-        auto const zz                                      = Chunk::decomposeBlockPos(z);
-        auto c                                             = w.getChunk<false>(xx.second, yy.second, zz.second);
+      if([[maybe_unused]] auto [block, side, x, y, z, dist] = w->raycast(position, Forward(lookX, lookZ), 8.0f); block) {
+        auto const xx                                       = Chunk::decomposeBlockPos(x);
+        auto const yy                                       = Chunk::decomposeBlockPos(y);
+        auto const zz                                       = Chunk::decomposeBlockPos(z);
+        auto c                                              = w->getChunk<false>(xx.second, yy.second, zz.second);
         c->removeBlockAt(xx.first, yy.first, zz.first);
       }
     }
@@ -176,12 +181,12 @@ void IngameState::handleEvent(Game *g, sf::Window &window, sf::Event &event) {
   }
 }
 
-float IngameState::pressure(float h) const {
+float IngameState::pressure(float const h) const {
   auto p = (2.574681483305359e6f - (1.173851852033113f * h) + (1.784060919377516e-7f * h * h) - (9.038819697211279e-15f * h * h * h));
   p      = std::max(0.0f, p);
   return p;
 }
 
 glm::vec3 IngameState::drag(const glm::vec3 &velocity, float const coefficient) const {
-  return (velocity * length(velocity) * (coefficient * pressure(position.z))) + (coefficient * pressure(position.z) * 100.0f * velocity);
+  return (velocity * length(velocity) * (coefficient * pressure(position.z / 10000))) + (coefficient * pressure(position.z / 10000) * 100.0f * velocity);
 }

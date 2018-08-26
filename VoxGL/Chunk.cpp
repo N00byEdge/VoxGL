@@ -36,7 +36,7 @@ auto const BlockgenAt = [](BlockCoord x, BlockCoord y, BlockCoord z, World *worl
   return InvalidHandle;
 };
 
-Chunk::Chunk(BlockCoord _x, BlockCoord _y, BlockCoord _z, World *world) : x(_x * ChunkSize), y(_y * ChunkSize), z(_z * ChunkSize), cx(_x),
+Chunk::Chunk(BlockCoord const _x, BlockCoord const _y, BlockCoord const _z, World *world) : x(_x * ChunkSize), y(_y * ChunkSize), z(_z * ChunkSize), cx(_x),
                                                                           cy(_y), cz(_z), w(*world) {
   for(BlockCoord bx          = 0; bx < ChunkSize; ++bx) {
     for(BlockCoord by        = 0; by < ChunkSize; ++by) {
@@ -141,9 +141,10 @@ void Chunk::regenerateChunkMesh() {
 }
 
 void Chunk::draw(float deltaT, const glm::vec3 &worldPos) {
-  if(std::lock_guard<std::mutex> lck(chunkMeshMutex); chunkMeshData) {
+  if(chunkMeshData) {
+    std::lock_guard<std::mutex> lck(chunkMeshMutex);
     chunkMesh = std::make_unique<Mesh>(chunkMeshData->vertices, chunkMeshData->indices);
-    chunkMeshData.release();
+    chunkMeshData.reset();
   }
 
   if(chunkMesh)
@@ -164,8 +165,13 @@ void Chunk::onAdjacentChunkLoad(BlockCoord const relX, BlockCoord const relY, Bl
   else if(relZ == -1)
     std::get<5>(adjacentChunks) = wp;
 
-  if(auto const nAdjacent = getAdjacentChunks().size();
-    nAdjacent == 6ull || (nAdjacent >= 5ull && !z))
+  if (auto const nAdjacent =
+      std::count_if(std::begin(adjacentChunks),
+                    std::end  (adjacentChunks),
+                    [](auto ptr) {
+                      return !ptr.expired();
+                     });
+    nAdjacent == 6ull || (nAdjacent == 5ull && !z))
     regenerateChunkMesh();
 }
 
@@ -186,7 +192,7 @@ int Chunk::blockPos(BlockCoord const x, BlockCoord const y, BlockCoord const z) 
 void Chunk::removeBlockAt(BlockCoord const _x, BlockCoord const _y, BlockCoord const _z) {
   auto const bp = blockPos(_x, _y, _z);
   blocks[bp]->remove(x + _x, y + _y, z + _z, w);
-  blocks[bp].release();
+  blocks[bp].reset();
   regenerateChunkMesh();
 
   if(_x == ChunkSize - 1) {

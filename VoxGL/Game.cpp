@@ -68,7 +68,7 @@ Game::Game() :
   gameState = this;
   setFrameTime(maxFps());
   gameWindow.setVerticalSyncEnabled(vsync());
-  pushGameState(std::make_unique<MenuState>(this));
+  emplaceGameState(std::make_unique<MenuState>(this));
 
   static const auto frame = [&]() {
     auto status           = states.back()->frame(this, gameWindow, std::max(lastFrameTime.count(), minFrameTime.count()) / 1000.0f);
@@ -78,7 +78,7 @@ Game::Game() :
     if(status.exitGame)
       states.clear();
     if(status.nextState)
-      pushGameState(std::move(status.nextState));
+      emplaceGameState(std::move(status.nextState));
   };
 
   while(!states.empty()) {
@@ -98,7 +98,7 @@ Game::Game() :
         std::cout << "State " << lastState << " threw the exception " << e.what() << ".\n";
         std::cin.ignore();
         states.clear();
-        pushGameState(std::make_unique<MenuState>(this));
+        emplaceGameState(std::make_unique<MenuState>(this));
       }
     }
 
@@ -113,7 +113,7 @@ Game::Game() :
   UnloadTextures();
 }
 
-void Game::pushGameState(std::unique_ptr<GameState> state) { states.push_back(std::move(state)); }
+void Game::emplaceGameState(std::unique_ptr<GameState> &&state) { states.emplace_back(std::forward<std::unique_ptr<GameState>>(state)); }
 
 void Game::setFrameTime(float const maxFps) {
   if(maxFps > 0)

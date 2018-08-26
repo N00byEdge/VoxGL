@@ -17,7 +17,7 @@ constexpr bool isDebugging = false;
 struct Game {
   Game();
 
-  void pushGameState(std::unique_ptr<GameState> state);
+  void emplaceGameState(std::unique_ptr<GameState> &&state);
 
   static Game *gameState;
 
