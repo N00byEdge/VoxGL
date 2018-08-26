@@ -89,6 +89,8 @@ VoxGL/Release*
 # File which should be linked through git
 VoxGL/stb_image.h
 
+build/*
+
 # Other project files
 VoxGL/GIMP/*
 VoxGL/wd/*
