@@ -37,7 +37,7 @@ constexpr std::pair<int, int> getPrecision(PerlinInstance pi) {
 	case PerlinInstance::Temperature:
 		return { TemperaturePrecision.Num, TemperaturePrecision.NoiseArg };
 	}
-	throw "Waddafik";
+  throw "Waddafik";
 }
 
 union ChunkIndex {

@@ -12,7 +12,7 @@ if(APPLE)
     set(SFML_LIB_PATH /SFML/lib/)
 
 elseif(UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -stdlib=libstdc++")
     set(SFML_INCLUDE_PATH /usr/local/include/)
     set(SFML_LIB_PATH /usr/local/lib/)
 
