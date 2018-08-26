@@ -1,5 +1,5 @@
 R"(
-#version 420
+#version 130
 
 varying vec2 textCoord0;
 

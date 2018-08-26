@@ -1,5 +1,5 @@
 R"(
-#version 420
+#version 130
 
 attribute vec3 position;
 attribute vec2 textCoord;
