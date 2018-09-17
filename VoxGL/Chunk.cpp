@@ -24,6 +24,9 @@ float Chunk::getBlerpWorldgenVal(BlockCoord x, BlockCoord y, World *world, Perli
 
 auto const BlockgenAt = [](BlockCoord x, BlockCoord y, BlockCoord z, World *world, BlockCoord height, float temperature) {
   if(z <= height) {
+    if(z < 16) {
+      return StoneHandle;
+    }
     if(temperature > .5f)
       return SandHandle;
     else {
@@ -170,8 +173,8 @@ void Chunk::onAdjacentChunkLoad(BlockCoord const relX, BlockCoord const relY, Bl
                     std::end  (adjacentChunks),
                     [](auto ptr) {
                       return !ptr.expired();
-                     });
-    nAdjacent == 6ull || (nAdjacent == 5ull && !z))
+                    });
+      nAdjacent == 6ull - !z)
     regenerateChunkMesh();
 }
 

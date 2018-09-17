@@ -82,6 +82,15 @@
     <ClInclude Include="Util.hpp">
       <Filter>Util</Filter>
     </ClInclude>
+    <ClInclude Include="Location.hpp">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Item.hpp">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.hpp">
+      <Filter>Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MenuState.cpp">

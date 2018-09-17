@@ -28,7 +28,7 @@ struct Block {
   virtual void remove(BlockCoord x, BlockCoord y, BlockCoord z, World &w);
   virtual void destroy(BlockCoord x, BlockCoord y, BlockCoord z, World &w);
   virtual MeshData getMesh(int x, int y, int z, BlockSide blockSides) = 0;
-  virtual void onBreak(Game &, BlockCoord x, BlockCoord y, BlockCoord z) = 0;
+  virtual void onBreak(World &, BlockCoord x, BlockCoord y, BlockCoord z) = 0;
   virtual ~Block() = default;
 };
 
@@ -38,5 +38,5 @@ struct BasicBlock: public Block {
   ~BasicBlock() override;
   bool isSolid() override;
   MeshData getMesh(BlockCoord x, BlockCoord y, BlockCoord z, BlockSide blockSides) override;
-  void onBreak(Game &, BlockCoord x, BlockCoord y, BlockCoord z) override;
+  void onBreak(World &, BlockCoord x, BlockCoord y, BlockCoord z) override;
 };

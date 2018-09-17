@@ -28,7 +28,6 @@ struct Game {
   Config::Option<float> fov                                = MakeOption<float>(100.0f);
   Config::Option<float> maxFps                             = MakeOption<float>(-1.0f);
   Config::Option<float> renderDistance                     = MakeOption<float>(1000.0f);
-  Config::Option<std::string> shaderPath                   = MakeOption<std::string>("./assets/res/");
   Config::Option<std::string> texturePath                  = MakeOption<std::string>("./assets/textures/");
 private:
 

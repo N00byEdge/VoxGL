@@ -8,6 +8,7 @@
 #include "BlockFaceMesh.hpp"
 #include "World.hpp"
 #include "Chunk.hpp"
+#include "Item.hpp"
 
 std::unordered_map<std::string, BlockHandle> StringToHandle;
 std::vector<BlockFactory> BlockFactoryHandles;
@@ -87,7 +88,9 @@ MeshData BasicBlock<Type>::getMesh(BlockCoord x, BlockCoord y, BlockCoord z, Blo
 }
 
 template<BlockType Type>
-void BasicBlock<Type>::onBreak(Game &game, BlockCoord x, BlockCoord y, BlockCoord z) {}
+void BasicBlock<Type>::onBreak(World &game, BlockCoord x, BlockCoord y, BlockCoord z) {
+  game.addItem(std::make_unique<BlockItem<BasicBlock<Type>>>(), x, y, z);
+}
 
 void Block::remove(BlockCoord x, BlockCoord y, BlockCoord z, World &w) {
   std::lock_guard<std::mutex> l(w.chunkMutex);

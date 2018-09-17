@@ -8,6 +8,8 @@
 #include "Transform.hpp"
 #include "Mesh.hpp"
 
+#include "Counter.hpp"
+
 #include <GL/gl.h>
 
 template<bool IsProgram>
@@ -21,13 +23,13 @@ void CheckShaderError(GLuint const shader, GLuint const flag, const std::string 
         ::endl;
 }
 
-GLuint MakeShader(const std::string &shaderSource, GLenum const shaderType) {
+GLuint MakeShader(const std::string_view shaderSource, GLenum const shaderType) {
   auto const shader = glCreateShader(shaderType);
 
-  auto fptr     = std::make_unique<const char *>(shaderSource.c_str());
-  auto filesize = std::make_unique<GLint>(static_cast<GLint>(shaderSource.size()));
+  auto const fptr     = shaderSource.data();
+  auto const filesize = static_cast<GLint>(shaderSource.size());
 
-  glShaderSource(shader, 1, fptr.get(), filesize.get());
+  glShaderSource(shader, 1, &fptr, &filesize);
   glCompileShader(shader);
 
   CheckShaderError<false>(shader, GL_COMPILE_STATUS, "Shader linking error: ");
@@ -37,7 +39,7 @@ GLuint MakeShader(const std::string &shaderSource, GLenum const shaderType) {
   return shader;
 }
 
-Shader::Shader(const std::string &vertexShader, const std::string &fragmentShader) :
+Shader::Shader(std::string_view vertexShader, std::string_view fragmentShader) :
   program(glCreateProgram()),
 
   shaders([&]() {
@@ -81,10 +83,10 @@ void Shader::bind() const {
   glUseProgram(program);
 }
 
-void Shader::update(const glm::mat4 &transform, const glm::mat4 &camera, const glm::vec3 &renderTranslation) const {
+void Shader::update(const glm::mat4 &transform, const glm::mat4 &camera, const glm::ivec3 &renderTranslation) const {
   glUseProgram(program);
   auto result = camera * transform;
 
   glUniformMatrix4fv(uniforms[UTransform], 1, GL_FALSE, &result[0][0]);
-  glUniform3fv(uniforms[UBlocktraslation], 1, &renderTranslation.x);
+  glUniform3iv(uniforms[UBlocktraslation], 1, &renderTranslation.x);
 }

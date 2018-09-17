@@ -3,6 +3,9 @@
 #include "glm/glm.hpp"
 
 #include "Blocks.hpp"
+#include "Item.hpp"
+
+#include "Bitfields/Bitfield.hpp"
 
 #include <thread>
 #include <mutex>
@@ -54,13 +57,10 @@ union ChunkIndex {
 	constexpr bool operator==(ChunkIndex const &other) const { return repr == other.repr; }
 	constexpr bool operator< (ChunkIndex const &other) const { return repr <  other.repr; }
 
-	struct {
-		long long x : 22;
-		long long y : 22;
-		unsigned long long z : 20;
-	};
-
-	long long repr;
+	std::int64_t repr;
+  Bitfields::Bitfield<0, 22, decltype(repr)> x;
+  Bitfields::Bitfield<22, 22, decltype(repr)> y;
+  Bitfields::Bitfield<44, 20, decltype(repr)> z;
 };
 
 static_assert(sizeof(ChunkIndex) <= 8, "ChunkIndex too large");
@@ -103,9 +103,11 @@ struct World {
 	std::tuple<Block *, BlockSide, BlockCoord, BlockCoord, BlockCoord, float> raycast(glm::vec3 from, glm::vec3 dir, float maxDist);
 	static constexpr ChunkIndex getChunkIndexBlock(BlockCoord x, BlockCoord y, BlockCoord z);
 
+  void addItem(std::unique_ptr<Item> item, BlockCoord x, BlockCoord y, BlockCoord z);
+
 	std::mutex chunkMutex;
 private:
-	bool generating = true;
+	std::atomic<bool> generating = true;
 	void worldgen();
 	glm::vec3 *const position;
 	std::mutex worldgenMapMutex;

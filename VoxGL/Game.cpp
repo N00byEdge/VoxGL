@@ -11,8 +11,6 @@
 
 Game *Game::gameState = nullptr;
 
-#define LOADT(text) text.loadFromFile(texturePath() + #text + ".png");
-
 Game::Game() :
 
   conf([&]() {
@@ -23,7 +21,6 @@ Game::Game() :
     conf.ADDOPT(antialiasingLevel);
     conf.ADDOPT(fov);
     conf.ADDOPT(maxFps);
-    conf.ADDOPT(shaderPath);
     conf.ADDOPT(texturePath);
     conf.ADDOPT(renderDistance);
     conf.ADDOPT(vsync);
@@ -85,7 +82,8 @@ Game::Game() :
     auto const frameStart = std::chrono::high_resolution_clock::now();
     sf::Event event{};
 
-    while(gameWindow.pollEvent(event))
+
+    for(int i = 0; gameWindow.pollEvent(event) && i < 20; ++ i)
       if(!states.empty())
         states.back()->handleEvent(this, gameWindow, event);
 
@@ -106,6 +104,7 @@ Game::Game() :
     std::chrono::duration<float, std::milli> const frameTime = frameEnd - frameStart;
     lastFrameTime                                            = frameTime;
     auto sleepFor                                            = minFrameTime - frameTime;
+    //std::cout << "Sleeping for " << sleepFor.count() << " after a frame time of " << frameTime.count() << ".\n";
     if(sleepFor.count() > 0.0f)
       std::this_thread::sleep_for(sleepFor);
   }

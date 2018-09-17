@@ -9,7 +9,7 @@
 #include <future>
 #include "PerlinNoise.hpp"
 
-constexpr float WorldgenDist = isDebugging ? 10.f : 15.f;
+constexpr float WorldgenDist = (isDebugging ? 3.f : 7.f) / (ChunkSize/16.0);
 
 World::World(glm::vec3 *const position, long long const seed) : position(position), seed(static_cast<decltype(this->seed)>(seed)),
                                                                 worldgenThread(&World::worldgen, this) { }
@@ -44,6 +44,7 @@ std::tuple<Block *, BlockSide, BlockCoord, BlockCoord, BlockCoord, float> World:
   auto start = from;
   auto curr  = sf::Vector3i(static_cast<BlockCoord>(floor(from.x)), static_cast<BlockCoord>(floor(from.y)),
                             static_cast<BlockCoord>(floor(from.z)));
+
   auto progress = glm::vec3(from.x - floor(from.x), from.y - floor(from.y), from.z - floor(from.z));
 
   auto const lim = static_cast<int>(maxDist * 3);
@@ -124,19 +125,21 @@ constexpr ChunkIndex World::getChunkIndexBlock(BlockCoord x, BlockCoord y, Block
   return ChunkIndex(Chunk::decomposeChunkFromBlock(x), Chunk::decomposeChunkFromBlock(y), Chunk::decomposeChunkFromBlock(z));
 }
 
+void World::addItem(std::unique_ptr<Item> item, BlockCoord x, BlockCoord y, BlockCoord z) {
+
+}
+
 void World::worldgen() {
   auto const makeChunk = [&](BlockCoord cx, BlockCoord cy, BlockCoord cz, ChunkIndex ci) {
     auto c = std::make_shared<Chunk>(cx, cy, cz, this);
-    {
-      std::lock_guard<std::mutex> lck(chunkMutex);
-      chunks[ci] = c;
+    std::lock_guard<std::mutex> lck(chunkMutex);
+    chunks[ci] = c;
 
-      // Hunt for adjacent chunks!
-      for(auto const &[dx, dy, dz]: Vdxyz) {
-        if(auto adjC = getChunk<true>(cx + dx, cy + dy, cz + dz)) {
-          adjC->onAdjacentChunkLoad(-dx, -dy, -dz, std::weak_ptr<Chunk>{c});
-          c->onAdjacentChunkLoad(dx, dy, dz, adjC);
-        }
+    // Hunt for adjacent chunks!
+    for(auto const &[dx, dy, dz]: Vdxyz) {
+      if(auto adjC = getChunk<true>(cx + dx, cy + dy, cz + dz); adjC) {
+        adjC->onAdjacentChunkLoad(-dx, -dy, -dz, std::weak_ptr<Chunk>{c});
+        c->onAdjacentChunkLoad(dx, dy, dz, adjC);
       }
     }
   };
