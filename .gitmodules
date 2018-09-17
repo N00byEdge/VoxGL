@@ -1,0 +1,3 @@
+[submodule "VoxGL/Bitfields"]
+	path = VoxGL/Bitfields
+	url = git@github.com:N00byEdge/Bitfields.git
