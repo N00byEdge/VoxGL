@@ -44,7 +44,9 @@ constexpr std::pair<int, int> getPrecision(PerlinInstance pi) {
 }
 
 union ChunkIndex {
-	constexpr ChunkIndex(BlockCoord x, BlockCoord y, BlockCoord z): x(x), y(y), z(z) { }
+	constexpr ChunkIndex(BlockCoord x, BlockCoord y_, BlockCoord z_): x(x) {
+    y = y_, z = z_;
+  }
 	constexpr ChunkIndex(ChunkIndex const &other): repr(other.repr) { }
 
 	template <size_t Ind>
