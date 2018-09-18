@@ -8,8 +8,6 @@
 #include "Transform.hpp"
 #include "Mesh.hpp"
 
-#include "Counter.hpp"
-
 #include <GL/gl.h>
 
 template<bool IsProgram>
@@ -19,8 +17,8 @@ void CheckShaderError(GLuint const shader, GLuint const flag, const std::string 
 
   (IsProgram ? glGetProgramiv : glGetShaderiv)(shader, flag, &success);
   if(!success)
-    (IsProgram ? glGetProgramInfoLog : glGetShaderInfoLog)(shader, sizeof(error), nullptr, error), std::cerr << errorPrefix << error << std
-        ::endl;
+    (IsProgram ? glGetProgramInfoLog : glGetShaderInfoLog)(shader, sizeof(error), nullptr, error),
+      std::cerr << errorPrefix << error << std::endl;
 }
 
 GLuint MakeShader(const std::string_view shaderSource, GLenum const shaderType) {
