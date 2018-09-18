@@ -12,9 +12,12 @@ if(APPLE)
     set(SFML_LIB_PATH /SFML/lib/)
 
 elseif(UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -stdlib=libstdc++")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
     set(SFML_INCLUDE_PATH /usr/local/include/)
     set(SFML_LIB_PATH /usr/local/lib/)
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -stdlib=libstdc++")
+    endif()
 
 else(APPLE)
 
