@@ -123,6 +123,9 @@ FrameRet IngameState::frame(Game *g, sf::Window &window, float const timeDelta) 
 }
 
 void IngameState::handleEvent(Game *g, sf::Window &window, sf::Event &event) {
+  auto windowMiddle = [&] {
+    return sf::Vector2i{ static_cast<int>(window.getSize().x) / 2, static_cast<int>(window.getSize().y / 2) };
+  };
   switch(event.type) {
   case sf::Event::Closed:
     fr.exitGame = true;
@@ -130,7 +133,7 @@ void IngameState::handleEvent(Game *g, sf::Window &window, sf::Event &event) {
   case sf::Event::Resized:
     glViewport(0, 0, event.size.width, event.size.height);
     if(!releaseCursor)
-      sf::Mouse::setPosition({static_cast<int>(window.getSize().x) / 2, static_cast<int>(window.getSize().y) / 2}, window);
+      sf::Mouse::setPosition(windowMiddle(), window);
     break;
   case sf::Event::KeyPressed:
     switch(event.key.code) {
@@ -141,7 +144,7 @@ void IngameState::handleEvent(Game *g, sf::Window &window, sf::Event &event) {
       if(window.hasFocus()) {
         releaseCursor = !releaseCursor;
         if(!releaseCursor)
-          sf::Mouse::setPosition({static_cast<int>(window.getSize().x) / 2, static_cast<int>(window.getSize().y) / 2}, window);
+          sf::Mouse::setPosition(windowMiddle(), window);
       }
       break;
     case sf::Keyboard::Key::F3:
@@ -151,7 +154,8 @@ void IngameState::handleEvent(Game *g, sf::Window &window, sf::Event &event) {
   case sf::Event::MouseMoved:
     if(!releaseCursor) {
       auto const mousePos = sf::Mouse::getPosition(window);
-      auto const delta    = mousePos - sf::Vector2i{static_cast<int>(window.getSize().x) / 2, static_cast<int>(window.getSize().y) / 2};
+      if (mousePos == windowMiddle()) return;
+      auto const delta = mousePos - windowMiddle();
 
       lookX -= static_cast<float>(delta.x) / 1000.0f;
 
@@ -164,7 +168,7 @@ void IngameState::handleEvent(Game *g, sf::Window &window, sf::Event &event) {
       if(lookZ < -3.1415f / 2)
         lookZ = -3.1415f / 2;
 
-      sf::Mouse::setPosition({static_cast<int>(window.getSize().x) / 2, static_cast<int>(window.getSize().y) / 2}, window);
+      sf::Mouse::setPosition(windowMiddle(), window);
     }
     break;
   case sf::Event::MouseButtonPressed:
