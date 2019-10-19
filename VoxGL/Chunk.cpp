@@ -226,9 +226,8 @@ void Chunk::reloadAdjacent(BlockCoord x, BlockCoord y, BlockCoord z) {
 }
 
 void Chunk::removeBlockAt(BlockCoord const _x, BlockCoord const _y, BlockCoord const _z) {
-  auto block = blockAt(_x, _y, _z);
-  block->remove(x + _x, y + _y, z + _z, w);
-  block = nullptr;
+  blockAt(_x, _y, _z)->remove(x + _x, y + _y, z + _z, w);
+  blocks[blockPos(_x, _y, _z)] = nullptr;
   regenerateChunkMesh();
   reloadAdjacent(x, y, z);
 }
