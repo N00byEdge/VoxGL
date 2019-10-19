@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Block.hpp"
+#include "Blocks.hpp"
 
 #include <array>
 #include <memory>
@@ -54,11 +54,14 @@ struct Chunk {
   static float getBlerpWorldgenVal(BlockCoord x, BlockCoord y, World *world, PerlinInstance instance);
   static constexpr BlockCoord blockHeight(float height);
 
+  void reloadAdjacent(BlockCoord x, BlockCoord y, BlockCoord z);
+
   void removeBlockAt(BlockCoord x, BlockCoord y, BlockCoord z);
+  void addBlockAt(BlockCoord x, BlockCoord y, BlockCoord z, BlockStorage block);
 
   std::ostream &operator<<(std::ostream &os);
 
-  std::array<std::unique_ptr<Block>, ChunkSize * ChunkSize * ChunkSize> blocks;
+  std::array<BlockStorage, ChunkSize * ChunkSize * ChunkSize> blocks;
   std::array<std::weak_ptr<Chunk>, 6> adjacentChunks;
 
   std::mutex chunkMeshMutex;

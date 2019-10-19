@@ -6,6 +6,7 @@
 #include "World.hpp"
 
 #include "Maths.hpp"
+#include "Util.hpp"
 
 #include <future>
 
@@ -56,12 +57,17 @@ Chunk::Chunk(BlockCoord const _x, BlockCoord const _y, BlockCoord const _z, Worl
   }
 }
 
-Block *Chunk::blockAt(BlockCoord const x, BlockCoord const y, BlockCoord const z) { return blocks[blockPos(x, y, z)].get(); }
+Block *Chunk::blockAt(BlockCoord const x, BlockCoord const y, BlockCoord const z) {
+  auto &blockVar = blocks[blockPos(x, y, z)];
+  return std::visit(Overloaded{
+      [](std::unique_ptr<Block> &uptr) -> Block * { return uptr.get(); }
+    , [](auto &inlineBlock)            -> Block * { return &inlineBlock; }
+  }, blockVar);
+}
 
 Block *Chunk::blockAtSafe(BlockCoord const x, BlockCoord const y, BlockCoord const z) {
-  if(0 <= x && x < ChunkSize && 0 <= y && y < ChunkSize && 0 <= z &&
-     z < ChunkSize)
-    return blocks.at(blockPos(x, y, z)).get();
+  if(0 <= x && x < ChunkSize && 0 <= y && y < ChunkSize && 0 <= z && z < ChunkSize)
+    return blockAt(x, y, z);
   return nullptr;
 }
 
@@ -192,34 +198,44 @@ int Chunk::blockPos(BlockCoord const x, BlockCoord const y, BlockCoord const z) 
   return x + (y << ChunkCoordBits) + (z << ChunkCoordBits * 2);
 }
 
-void Chunk::removeBlockAt(BlockCoord const _x, BlockCoord const _y, BlockCoord const _z) {
-  auto const bp = blockPos(_x, _y, _z);
-  blocks[bp]->remove(x + _x, y + _y, z + _z, w);
-  blocks[bp].reset();
-  regenerateChunkMesh();
+void Chunk::reloadAdjacent(BlockCoord x, BlockCoord y, BlockCoord z) {
+  if (x == ChunkSize - 1) {
+    if (auto c = std::get<0>(adjacentChunks).lock())
+      c->regenerateChunkMesh();
+  }
+  if (x == 0) {
+    if (auto c = std::get<1>(adjacentChunks).lock())
+      c->regenerateChunkMesh();
+  }
+  if (y == ChunkSize - 1) {
+    if (auto c = std::get<2>(adjacentChunks).lock())
+      c->regenerateChunkMesh();
+  }
+  if (y == 0) {
+    if (auto c = std::get<3>(adjacentChunks).lock())
+      c->regenerateChunkMesh();
+  }
+  if (z == ChunkSize - 1) {
+    if (auto c = std::get<4>(adjacentChunks).lock())
+      c->regenerateChunkMesh();
+  }
+  if (z == 0) {
+    if (auto c = std::get<5>(adjacentChunks).lock())
+      c->regenerateChunkMesh();
+  }
+}
 
-  if(_x == ChunkSize - 1) {
-    if(auto c = std::get<0>(adjacentChunks).lock())
-      c->regenerateChunkMesh();
-  }
-  if(_x == 0) {
-    if(auto c = std::get<1>(adjacentChunks).lock())
-      c->regenerateChunkMesh();
-  }
-  if(_y == ChunkSize - 1) {
-    if(auto c = std::get<2>(adjacentChunks).lock())
-      c->regenerateChunkMesh();
-  }
-  if(_y == 0) {
-    if(auto c = std::get<3>(adjacentChunks).lock())
-      c->regenerateChunkMesh();
-  }
-  if(_z == ChunkSize - 1) {
-    if(auto c = std::get<4>(adjacentChunks).lock())
-      c->regenerateChunkMesh();
-  }
-  if(_z == 0) {
-    if(auto c = std::get<5>(adjacentChunks).lock())
-      c->regenerateChunkMesh();
-  }
+void Chunk::removeBlockAt(BlockCoord const _x, BlockCoord const _y, BlockCoord const _z) {
+  auto block = blockAt(_x, _y, _z);
+  block->remove(x + _x, y + _y, z + _z, w);
+  block = nullptr;
+  regenerateChunkMesh();
+  reloadAdjacent(x, y, z);
+}
+
+void Chunk::addBlockAt(BlockCoord x, BlockCoord y, BlockCoord z, BlockStorage block) {
+  auto const bp = blockPos(x, y, z);
+  blocks[bp] = std::move(block);
+  regenerateChunkMesh();
+  reloadAdjacent(x, y, z);
 }

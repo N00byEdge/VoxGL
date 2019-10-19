@@ -173,12 +173,35 @@ void IngameState::handleEvent(Game *g, sf::Window &window, sf::Event &event) {
     break;
   case sf::Event::MouseButtonPressed:
     if(!releaseCursor) {
-      if([[maybe_unused]] auto [block, side, x, y, z, dist] = w->raycast(position, Forward(lookX, lookZ), 8.0f); block) {
-        auto const xx                                       = Chunk::decomposeBlockPos(x);
-        auto const yy                                       = Chunk::decomposeBlockPos(y);
-        auto const zz                                       = Chunk::decomposeBlockPos(z);
-        auto c                                              = w->getChunk<false>(xx.second, yy.second, zz.second);
-        c->removeBlockAt(xx.first, yy.first, zz.first);
+      if(event.mouseButton.button == sf::Mouse::Button::Left) {
+        if([[maybe_unused]] auto [block, side, x, y, z, dist] = w->raycast(position, Forward(lookX, lookZ), 8.0f); block) {
+          auto const xx                                       = Chunk::decomposeBlockPos(x);
+          auto const yy                                       = Chunk::decomposeBlockPos(y);
+          auto const zz                                       = Chunk::decomposeBlockPos(z);
+          auto c                                              = w->getChunk<false>(xx.second, yy.second, zz.second);
+          c->removeBlockAt(xx.first, yy.first, zz.first);
+        }
+      }
+      else if(event.mouseButton.button == sf::Mouse::Button::Right) {
+        if([[maybe_unused]] auto [block, side, x, y, z, dist] = w->raycast(position, Forward(lookX, lookZ), 8.0f); block) {
+          switch (side) {
+          case BlockSide::Top:
+            ++z;
+            break;
+          case BlockSide::Bottom:
+            --z;
+            break;
+          }
+          auto xx                                             = Chunk::decomposeBlockPos(x);
+          auto yy                                             = Chunk::decomposeBlockPos(y);
+          auto zz                                             = Chunk::decomposeBlockPos(z);
+          auto c                                              = w->getChunk<false>(xx.second, yy.second, zz.second);
+          auto blockHere                                      = c->blockAt(xx.first, yy.first, zz.first);
+          if (!blockHere) {
+            auto blk = BlockFactoryHandles[DirtHandle](x, y, z, &*w);
+            c->addBlockAt(xx.first, yy.first, zz.first, std::move(blk));
+          }
+        }
       }
     }
     break;

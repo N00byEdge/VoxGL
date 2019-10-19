@@ -14,7 +14,7 @@ BlockHandle RegisterBlockFactory(std::string const &&name, BlockFactory factory)
   return static_cast<BlockHandle>(BlockFactoryHandles.size() - 1);
 }
 
-std::unique_ptr<Block> CreateBlock(int const factoryHandle, int const x, int const y, int const z, World *w) {
+BlockStorage CreateBlock(int const factoryHandle, int const x, int const y, int const z, World *w) {
   try { return BlockFactoryHandles[factoryHandle](x, y, z, w); }
   catch(std::exception &) { return nullptr; }
 }

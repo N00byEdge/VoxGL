@@ -9,10 +9,19 @@ struct World;
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <variant>
 
 #include "Block.hpp"
 
-using BlockFactory = std::function<std::unique_ptr<Block>(BlockCoord, BlockCoord, BlockCoord, World *)>;
+using BlockStorage = std::variant<
+    std::unique_ptr<Block>
+  , DirtBlock
+  , GrassBlock
+  , StoneBlock
+  , SandBlock
+>;
+
+using BlockFactory = std::function<BlockStorage(BlockCoord, BlockCoord, BlockCoord, World *)>;
 extern std::vector<BlockCoord> const  Vx;
 extern std::vector<std::tuple<BlockCoord, BlockCoord>> const  Vdxy;
 extern std::vector<std::tuple<BlockCoord, BlockCoord, BlockCoord>> const Vdxyz;
@@ -23,6 +32,6 @@ extern std::vector<std::string> HandleToString;
 
 BlockHandle RegisterBlockFactory(std::string const &&name, BlockFactory factory);
 
-std::unique_ptr<Block> CreateBlock(int factoryHandle, int x, int y, int z, World *);
+BlockStorage CreateBlock(int factoryHandle, int x, int y, int z, World *);
 std::string const &GetBlockName(int blockHandle);
 BlockHandle GetBlockHandle(std::string const &blockName);

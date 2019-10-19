@@ -35,8 +35,13 @@ struct Block {
 template<BlockType Type>
 struct BasicBlock: public Block {
   BasicBlock();
-  ~BasicBlock() override;
-  bool isSolid() override;
-  MeshData getMesh(BlockCoord x, BlockCoord y, BlockCoord z, BlockSide blockSides) override;
-  void onBreak(World &, BlockCoord x, BlockCoord y, BlockCoord z) override;
+  ~BasicBlock() final;
+  bool isSolid() final;
+  MeshData getMesh(BlockCoord x, BlockCoord y, BlockCoord z, BlockSide blockSides) final;
+  void onBreak(World &, BlockCoord x, BlockCoord y, BlockCoord z) final;
 };
+
+using DirtBlock = BasicBlock<BlockType::Dirt>;
+using GrassBlock = BasicBlock<BlockType::Grass>;
+using StoneBlock = BasicBlock<BlockType::Stone>;
+using SandBlock = BasicBlock<BlockType::Sand>;

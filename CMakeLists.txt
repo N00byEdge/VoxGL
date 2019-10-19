@@ -2,27 +2,27 @@ cmake_minimum_required(VERSION 3.5)
 project(VoxGL)
 
 file(GLOB SOURCE_FILES
-        "VoxGL/*.cpp"
-        "VoxGL/*.hpp"
-        )
+    "VoxGL/*.cpp"
+    "VoxGL/*.hpp"
+    )
 
 if(APPLE)
 
-    set(SFML_INCLUDE_PATH /SFML/include/)
-    set(SFML_LIB_PATH /SFML/lib/)
+  set(SFML_INCLUDE_PATH /SFML/include/)
+  set(SFML_LIB_PATH /SFML/lib/)
 
 elseif(UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-    set(SFML_INCLUDE_PATH /usr/local/include/)
-    set(SFML_LIB_PATH /usr/local/lib/)
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -stdlib=libstdc++")
-    endif()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -DGLM_ENABLE_EXPERIMENTAL")
+  set(SFML_INCLUDE_PATH /usr/local/include/)
+  set(SFML_LIB_PATH /usr/local/lib/)
+  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -stdlib=libstdc++")
+  endif()
 
 else(APPLE)
 
-    set(SFML_LIB_PATH $ENV{SFML64232}/lib)
-    set(SFML_INCLUDE_PATH $ENV{SFML64232}/include)
+  set(SFML_LIB_PATH $ENV{SFML64232}/lib)
+  set(SFML_INCLUDE_PATH $ENV{SFML64232}/include)
 
 endif(APPLE)
 
@@ -37,12 +37,12 @@ include_directories(VoxGL)
 add_executable(VoxGL ${SOURCE_FILES})
 
 if (APPLE)
-    # Mac
-    target_link_libraries(VoxGL sfml-graphics sfml-window sfml-network sfml-system)
+  # Mac
+  target_link_libraries(VoxGL sfml-graphics sfml-window sfml-network sfml-system)
 elseif (UNIX)
-    # Linux
-    target_link_libraries(VoxGL sfml-graphics sfml-window sfml-network sfml-system GL GLU GLEW glut)
+  # Linux
+  target_link_libraries(VoxGL sfml-graphics sfml-window sfml-network sfml-system GL GLU GLEW glut)
 else (APPLE)
-    # Windows
-    target_link_libraries(VoxGL sfml-graphics-s sfml-window-s sfml-network-s sfml-system-s opengl32 winmm gdi32 freetype jpeg openal32 flac vorbisenc vorbisfile vorbis ogg)
+  # Windows
+  target_link_libraries(VoxGL sfml-graphics-s sfml-window-s sfml-network-s sfml-system-s opengl32 winmm gdi32 freetype jpeg openal32 flac vorbisenc vorbisfile vorbis ogg)
 endif (APPLE)
