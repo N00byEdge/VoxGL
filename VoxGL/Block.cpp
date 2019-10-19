@@ -16,16 +16,16 @@ std::vector<std::string> HandleToString;
 
 BlockHandle InvalidHandle = RegisterBlockFactory("invalid", [](BlockCoord x, BlockCoord y, BlockCoord z, World *w) { return nullptr; });
 BlockHandle DirtHandle    = RegisterBlockFactory("dirt", [](BlockCoord x, BlockCoord y, BlockCoord z, World *w) {
-  return std::make_unique<BasicBlock<BlockType::Dirt>>();
+  return DirtBlock{};
 });
 BlockHandle GrassHandle = RegisterBlockFactory("grass", [](BlockCoord x, BlockCoord y, BlockCoord z, World *w) {
-  return std::make_unique<BasicBlock<BlockType::Grass>>();
+  return GrassBlock{};
 });
 BlockHandle StoneHandle = RegisterBlockFactory("stone", [](BlockCoord x, BlockCoord y, BlockCoord z, World *w) {
-  return std::make_unique<BasicBlock<BlockType::Stone>>();
+  return StoneBlock{};
 });
 BlockHandle SandHandle = RegisterBlockFactory("sand", [](BlockCoord x, BlockCoord y, BlockCoord z, World *w) {
-  return std::make_unique<BasicBlock<BlockType::Sand>>();
+  return SandBlock{};
 });
 
 namespace Textures {
