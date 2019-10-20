@@ -9,7 +9,7 @@
 #include <future>
 #include "PerlinNoise.hpp"
 
-constexpr float WorldgenDist = (isDebugging ? 3.f : 7.f) / (ChunkSize/16.0);
+constexpr float WorldgenDist = (isDebugging ? 3.f : 14.f) / (ChunkSize/16.0);
 
 World::World(glm::vec3 *const position, long long const seed) : position(position), seed(static_cast<decltype(this->seed)>(seed)),
                                                                 worldgenThread(&World::worldgen, this) { }
@@ -60,26 +60,18 @@ std::tuple<Block *, BlockSide, BlockCoord, BlockCoord, BlockCoord, float> World:
 
     auto changed = Changed::None;
 
-    if(dir.x) {
-      if(auto const dist = IntDist(progress.x, dir.x); dist < remaining) {
-        remaining        = dist;
-        changed          = Changed::X;
+    auto update = [&changed, &remaining](auto dirv, auto &prog, auto vchang) {
+      if(dirv) {
+        if(auto const dist = IntDist(prog, dirv); dist < remaining) {
+          remaining = dist;
+          changed   = vchang;
+        }
       }
-    }
+    };
 
-    if(dir.y) {
-      if(auto const dist = IntDist(progress.y, dir.y); dist < remaining) {
-        remaining        = dist;
-        changed          = Changed::Y;
-      }
-    }
-
-    if(dir.z) {
-      if(auto const dist = IntDist(progress.z, dir.z); dist < remaining) {
-        remaining        = dist;
-        changed          = Changed::Z;
-      }
-    }
+    update(dir.x, progress.x, Changed::X);
+    update(dir.y, progress.y, Changed::Y);
+    update(dir.z, progress.z, Changed::Z);
 
     travelled += static_cast<float>(sqrt(Pow<2>(remaining * dir.x) + Pow<2>(remaining * dir.y) + Pow<2>(remaining * dir.z)));
     if(changed == Changed::None || travelled > maxDist)
